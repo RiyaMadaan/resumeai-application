@@ -18,13 +18,28 @@ function required(name: string, fallback?: string): string {
   return value
 }
 
-/** Split a comma-separated origin list, trimming blanks and trailing slashes. */
+/**
+ * Origins allowed in development when CLIENT_ORIGIN isn't set.
+ *
+ * `localhost` and `127.0.0.1` are *different* origins to the browser, and Vite
+ * may serve on either, so both are permitted out of the box.
+ */
+const DEV_ORIGINS = 'http://localhost:5173,http://127.0.0.1:5173'
+
+/**
+ * Split a comma-separated origin list into a normalized allowlist.
+ *
+ * Entries are trimmed, lowercased and stripped of trailing slashes so that the
+ * configured value matches the browser's `Origin` header, which never carries a
+ * trailing slash. Duplicates are collapsed.
+ */
 function parseOrigins(raw: string | undefined, fallback: string): string[] {
   const value = (raw ?? '').trim() || fallback
-  return value
+  const origins = value
     .split(',')
-    .map((origin) => origin.trim().replace(/\/+$/, ''))
+    .map((origin) => origin.trim().replace(/\/+$/, '').toLowerCase())
     .filter(Boolean)
+  return [...new Set(origins)]
 }
 
 export const env = {
@@ -33,11 +48,12 @@ export const env = {
   /**
    * Browser origins allowed to call this API with credentials.
    *
-   * Accepts a comma-separated list so the Vite dev server can move ports
-   * without the API silently rejecting it. Wildcards are deliberately not
-   * supported: the API is used with credentials, and `*` is invalid there.
+   * Set CLIENT_ORIGIN to a comma-separated list to control this per
+   * environment; production should always set it explicitly. Wildcards are
+   * deliberately not supported: the API is used with credentials, and `*` is
+   * invalid alongside them.
    */
-  clientOrigins: parseOrigins(process.env.CLIENT_ORIGIN, 'http://localhost:5173'),
+  clientOrigins: parseOrigins(process.env.CLIENT_ORIGIN, DEV_ORIGINS),
 
   mongoUri: required('MONGODB_URI', 'mongodb://127.0.0.1:27017/resumeai'),
 

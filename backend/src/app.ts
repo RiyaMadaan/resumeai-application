@@ -21,7 +21,12 @@ export function createApp() {
     origin(origin, callback) {
       // Requests with no Origin header (curl, health checks, server-to-server)
       // aren't browser cross-origin requests, so there is nothing to block.
-      if (!origin || env.clientOrigins.includes(origin)) {
+      if (!origin) return callback(null, true)
+
+      // Compare case-insensitively and without a trailing slash, matching how
+      // the allowlist itself is normalized.
+      const normalized = origin.trim().replace(/\/+$/, '').toLowerCase()
+      if (env.clientOrigins.includes(normalized)) {
         return callback(null, true)
       }
       // Deny by omitting the CORS headers rather than throwing: the browser
