@@ -1,0 +1,10 @@
+node_modules
+dist
+*.log
+
+# Environment — never commit real secrets
+.env
+.env.local
+.env.*.local
+
+.DS_Store
