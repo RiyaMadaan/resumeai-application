@@ -55,10 +55,10 @@ npm run dev              # http://localhost:5000  (health: /api/health)
 cd frontend
 cp .env.example .env     # defaults to http://localhost:5000/api
 npm install
-npm run dev              # http://localhost:5175
+npm run dev              # http://localhost:5173
 ```
 
-Then register at **http://localhost:5175/register**.
+Then register at **http://localhost:5173/register**.
 
 ## Environment variables
 

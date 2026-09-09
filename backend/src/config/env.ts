@@ -18,10 +18,26 @@ function required(name: string, fallback?: string): string {
   return value
 }
 
+/** Split a comma-separated origin list, trimming blanks and trailing slashes. */
+function parseOrigins(raw: string | undefined, fallback: string): string[] {
+  const value = (raw ?? '').trim() || fallback
+  return value
+    .split(',')
+    .map((origin) => origin.trim().replace(/\/+$/, ''))
+    .filter(Boolean)
+}
+
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
   port: Number(process.env.PORT ?? 5000),
-  clientOrigin: process.env.CLIENT_ORIGIN ?? 'http://localhost:5175',
+  /**
+   * Browser origins allowed to call this API with credentials.
+   *
+   * Accepts a comma-separated list so the Vite dev server can move ports
+   * without the API silently rejecting it. Wildcards are deliberately not
+   * supported: the API is used with credentials, and `*` is invalid there.
+   */
+  clientOrigins: parseOrigins(process.env.CLIENT_ORIGIN, 'http://localhost:5173'),
 
   mongoUri: required('MONGODB_URI', 'mongodb://127.0.0.1:27017/resumeai'),
 

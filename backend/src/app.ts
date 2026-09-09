@@ -1,5 +1,5 @@
 import express, { type Request, type Response } from 'express'
-import cors from 'cors'
+import cors, { type CorsOptions } from 'cors'
 import { env } from './config/env.js'
 import apiRoutes from './routes/index.js'
 import { notFound, errorHandler } from './middleware/error.middleware.js'
@@ -11,7 +11,31 @@ import { notFound, errorHandler } from './middleware/error.middleware.js'
 export function createApp() {
   const app = express()
 
-  app.use(cors({ origin: env.clientOrigin, credentials: true }))
+  /**
+   * CORS. `credentials: true` is required because the app authenticates, so a
+   * wildcard origin is not permissible — the browser rejects `*` alongside
+   * credentials. Instead we reflect back any origin on the configured
+   * allowlist (see CLIENT_ORIGIN).
+   */
+  const corsOptions: CorsOptions = {
+    origin(origin, callback) {
+      // Requests with no Origin header (curl, health checks, server-to-server)
+      // aren't browser cross-origin requests, so there is nothing to block.
+      if (!origin || env.clientOrigins.includes(origin)) {
+        return callback(null, true)
+      }
+      // Deny by omitting the CORS headers rather than throwing: the browser
+      // blocks the response, and the API doesn't emit a spurious 500.
+      console.warn(`[cors] Blocked origin: ${origin}`)
+      return callback(null, false)
+    },
+    credentials: true,
+  }
+
+  // A single CORS registration, applied to preflight and actual requests alike,
+  // so no route can emit a second, conflicting set of CORS headers.
+  app.use(cors(corsOptions))
+  app.options('*', cors(corsOptions))
   app.use(express.json({ limit: '1mb' }))
 
   // Lightweight health check (no DB required).
