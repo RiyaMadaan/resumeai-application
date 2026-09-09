@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Spinner } from '@/components/ui/LoadingState'
 import { aiApi } from '@/api/ai.api'
+import { getPreferredTemplate } from '@/lib/preferredTemplate'
 import { resumesApi } from '@/api/resumes.api'
 import { getApiErrorMessage } from '@/api/client'
 import type { ResumeInput } from '@/types/resume'
@@ -60,6 +61,8 @@ export function NewResumePage() {
   const createAndOpen = async (content: ResumeInput, extractionFailed: boolean) => {
     const resume = await resumesApi.create({
       title: title.trim() || 'Untitled Resume',
+      // Whatever was picked in the template gallery, if anything.
+      template: getPreferredTemplate(),
       ...content,
     })
     navigate(`/resume/${resume._id}`, {

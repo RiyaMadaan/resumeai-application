@@ -3,7 +3,19 @@
  * app speaks one shape. A resume is structured (sections), never a raw string.
  */
 
-export type TemplateVariant = 'classic' | 'modern' | 'minimal'
+/**
+ * A resume template identifier, e.g. "classic" or "modern-01".
+ *
+ * The catalog in `@/templates/catalog` is the source of truth for which ids
+ * exist. This is a plain string rather than a union so the catalog can grow
+ * without a type change rippling through the app, and so a resume saved with a
+ * template that was later renamed still loads — `getTemplate` falls back to the
+ * default instead of failing.
+ */
+export type TemplateId = string
+
+/** Historic name for {@link TemplateId}, kept so existing call sites compile. */
+export type TemplateVariant = TemplateId
 
 export interface PersonalInfo {
   fullName: string

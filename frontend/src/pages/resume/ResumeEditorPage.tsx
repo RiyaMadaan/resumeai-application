@@ -13,16 +13,14 @@ import {
 } from '@/components/resume/JobCustomizeReview'
 import { AtsScoreModal } from '@/components/resume/AtsScoreModal'
 import { ResumeSectionsEditor, type ResumeSections } from '@/components/resume/ResumeSectionsEditor'
+import { TemplateGallery } from '@/components/resume/TemplateGallery'
+import { Modal } from '@/components/ui/Modal'
+import { getTemplate } from '@/templates/catalog'
+import { TemplateThumbnail } from '@/templates/TemplateThumbnail'
 import { resumesApi, type ImportSummary } from '@/api/resumes.api'
 import { getApiErrorMessage } from '@/api/client'
 import type { AiCustomizeResult } from '@/api/ai.api'
 import { emptyPersonalInfo, type Resume, type TemplateVariant } from '@/types/resume'
-
-const TEMPLATES: { value: TemplateVariant; label: string }[] = [
-  { value: 'classic', label: 'Classic' },
-  { value: 'modern', label: 'Modern' },
-  { value: 'minimal', label: 'Minimal' },
-]
 
 /** An empty, well-formed set of sections for a resume that hasn't loaded yet. */
 const emptySections: ResumeSections = {
@@ -85,6 +83,8 @@ export function ResumeEditorPage() {
 
   // View state — on narrow screens the two panes become tabs.
   const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('edit')
+  // The template gallery is a dialog so switching designs never loses your place.
+  const [templateOpen, setTemplateOpen] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -148,6 +148,9 @@ export function ResumeEditorPage() {
       template,
     }
   }, [resume, title, summary, skillsText, sections, template])
+
+  /** The spec behind the currently selected template id. */
+  const activeTemplate = useMemo(() => getTemplate(template), [template])
 
   const handleExportPdf = async () => {
     if (!previewResume || exporting) return
@@ -259,26 +262,27 @@ export function ResumeEditorPage() {
   /* ── The editing pane ── */
   const editor = (
     <div className="space-y-3">
-      {/* Template */}
+      {/* Template — a miniature of the current design, and a way to change it */}
       <div className="rounded-xl border border-slate-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-ink">Template</h2>
-        <div className="mt-2.5 grid grid-cols-3 gap-2">
-          {TEMPLATES.map((t) => (
-            <button
-              key={t.value}
-              type="button"
-              onClick={() => setTemplate(t.value)}
-              aria-pressed={template === t.value}
-              className={
-                'rounded-lg border px-3 py-2 text-sm font-medium transition-colors ' +
-                (template === t.value
-                  ? 'border-brand-400 bg-brand-50 text-brand-700'
-                  : 'border-slate-200 text-ink-muted hover:border-brand-200')
-              }
+        <div className="flex items-start gap-3.5">
+          <div className="w-16 flex-shrink-0 overflow-hidden rounded-md ring-1 ring-slate-200">
+            <TemplateThumbnail spec={activeTemplate} resume={previewResume ?? undefined} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm font-semibold text-ink">Template</h2>
+            <p className="mt-0.5 truncate text-sm text-ink-muted">
+              {activeTemplate.name}
+              <span className="text-ink-subtle"> · {activeTemplate.category}</span>
+            </p>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="mt-2.5"
+              onClick={() => setTemplateOpen(true)}
             >
-              {t.label}
-            </button>
-          ))}
+              Change template
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -472,6 +476,24 @@ export function ResumeEditorPage() {
           resume={previewResume ?? undefined}
         />
       )}
+
+      {/* Template gallery. Changing the template only swaps the design — every
+          field stays exactly as it was, and nothing persists until Save. */}
+      <Modal
+        open={templateOpen}
+        onClose={() => setTemplateOpen(false)}
+        title="Choose a template"
+        className="max-w-6xl max-h-[88vh] overflow-y-auto"
+      >
+        <TemplateGallery
+          selectedId={template}
+          onSelect={(id) => {
+            setTemplate(id)
+            setTemplateOpen(false)
+          }}
+          previewResume={previewResume ?? undefined}
+        />
+      </Modal>
 
       {/* Review a tailoring proposal before it touches the editor */}
       {previewResume && (

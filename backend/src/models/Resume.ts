@@ -52,11 +52,26 @@ const projectSchema = new Schema(
   { _id: false },
 )
 
-/** Supported template identifiers (mirrors the marketing templates). */
+/** The templates this app shipped with, and the default for a new resume. */
 export const RESUME_TEMPLATES = ['classic', 'modern', 'minimal'] as const
 
-/** A supported template identifier. */
-export type TemplateVariant = (typeof RESUME_TEMPLATES)[number]
+/** The template a resume gets when none is supplied. */
+export const DEFAULT_TEMPLATE = 'classic'
+
+/**
+ * A template identifier, e.g. "classic" or "modern-01".
+ *
+ * The catalog of designs lives in the frontend, since a template is purely a
+ * rendering choice — the server stores the id and never interprets it. Rather
+ * than duplicating a 60-entry list here (which would have to be edited in two
+ * places every time a design is added), the id is validated by *shape*: a short
+ * lowercase slug. That keeps the field safe to store and echo back while
+ * letting the catalog grow freely.
+ */
+export type TemplateVariant = string
+
+/** Slugs only — no spaces, no punctuation beyond a hyphen, and bounded. */
+export const TEMPLATE_ID_PATTERN = /^[a-z][a-z0-9-]{0,39}$/
 
 /**
  * Plain value shapes for the resume's sections.
@@ -208,7 +223,17 @@ const resumeSchema = new Schema(
     projects: { type: [projectSchema], default: [] },
     certifications: { type: [String], default: [] },
 
-    template: { type: String, enum: RESUME_TEMPLATES, default: 'classic' },
+    template: {
+      type: String,
+      default: DEFAULT_TEMPLATE,
+      // Validate the shape rather than a fixed list, so adding a design to the
+      // frontend catalog doesn't require a schema change. An unknown id still
+      // renders — the client falls back to the default template.
+      validate: {
+        validator: (value: string) => TEMPLATE_ID_PATTERN.test(value),
+        message: 'Invalid template identifier',
+      },
+    },
 
     // Latest ATS analysis — metadata, not resume content. Set only by the ATS
     // endpoint; never accepted from a client update.

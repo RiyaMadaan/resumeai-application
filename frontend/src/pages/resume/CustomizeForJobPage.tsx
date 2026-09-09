@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { getTemplate } from '@/templates/catalog'
 import { Container } from '@/components/ui/Container'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -194,7 +195,7 @@ export function CustomizeForJobPage() {
                           </span>
                           <span className="block text-xs text-ink-subtle">
                             Updated {formatUpdated(resume.updatedAt)} ·{' '}
-                            <span className="capitalize">{resume.template}</span>
+                            <span>{getTemplate(resume.template).name}</span>
                           </span>
                         </span>
                       </label>

@@ -1,5 +1,9 @@
 import { useNavigate } from 'react-router-dom'
 import { Container } from '@/components/ui/Container'
+import { Button } from '@/components/ui/Button'
+import { TemplateThumbnail } from '@/templates/TemplateThumbnail'
+import { getTemplate } from '@/templates/catalog'
+import { getPreferredTemplate } from '@/lib/preferredTemplate'
 import { ChatIcon, PencilIcon, UploadIcon } from '@/components/ui/icons'
 import type { ReactNode } from 'react'
 
@@ -39,6 +43,9 @@ function Choice({ icon, title, description, cta, onSelect }: ChoiceProps) {
  */
 export function CreateResumeChoicePage() {
   const navigate = useNavigate()
+  // The template a resume created here will start in. Read once on render —
+  // returning from the gallery remounts this page, so it stays current.
+  const template = getTemplate(getPreferredTemplate())
 
   return (
     <Container className="max-w-3xl py-10 sm:py-14">
@@ -52,7 +59,27 @@ export function CreateResumeChoicePage() {
       <h1 className="text-2xl font-bold tracking-tight text-ink">Create your resume</h1>
       <p className="mt-1 text-sm text-ink-muted">Choose how you'd like to start.</p>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* The starting template. Changing it here is optional — every resume can
+          switch template later from its editor. */}
+      <div className="mt-6 flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3.5">
+          <div className="w-14 flex-shrink-0 overflow-hidden rounded-md ring-1 ring-slate-200">
+            <TemplateThumbnail spec={template} />
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-subtle">
+              Starting template
+            </p>
+            <p className="mt-0.5 text-sm font-semibold text-ink">{template.name}</p>
+            <p className="text-xs text-ink-muted">{template.category}</p>
+          </div>
+        </div>
+        <Button variant="secondary" size="sm" onClick={() => navigate('/templates')}>
+          Browse templates
+        </Button>
+      </div>
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Choice
           icon={<PencilIcon width={20} height={20} />}
           title="Start from scratch"

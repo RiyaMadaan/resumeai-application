@@ -6,6 +6,7 @@ import { DashboardPage } from '@/pages/dashboard/DashboardPage'
 import { AccountPage } from '@/pages/account/AccountPage'
 import { CreateResumeChoicePage } from '@/pages/resume/CreateResumeChoicePage'
 import { NewResumePage } from '@/pages/resume/NewResumePage'
+import { TemplatesPage } from '@/pages/resume/TemplatesPage'
 import { UploadResumePage } from '@/pages/resume/UploadResumePage'
 import { AiInterviewPage } from '@/pages/resume/AiInterviewPage'
 import { ResumeEditorPage } from '@/pages/resume/ResumeEditorPage'
@@ -20,6 +21,7 @@ import { ProtectedRoute } from '@/routes/ProtectedRoute'
  *   /login, /register      public
  *   /dashboard             user's resumes              (protected)
  *   /account               profile details             (protected)
+ *   /templates             browse resume templates     (protected)
  *   /resume/new            create: scratch / AI / upload (protected)
  *   /resume/new/scratch    describe your career        (protected)
  *   /resume/new/upload     import an existing PDF/DOCX (protected)
@@ -44,6 +46,7 @@ function App() {
           <Route path="/app" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/account" element={<AccountPage />} />
+          <Route path="/templates" element={<TemplatesPage />} />
           <Route path="/resume/new" element={<CreateResumeChoicePage />} />
           <Route path="/resume/new/scratch" element={<NewResumePage />} />
           <Route path="/resume/new/upload" element={<UploadResumePage />} />

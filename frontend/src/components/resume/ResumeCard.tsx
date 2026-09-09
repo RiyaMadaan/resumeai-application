@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import type { Resume } from '@/types/resume'
 import { buttonClasses } from '@/components/ui/Button'
+import { getTemplate } from '@/templates/catalog'
 import { Menu, MenuItem, MenuSeparator } from '@/components/ui/Menu'
 
 /** Format an ISO date into a short, friendly "Updated" label. */
@@ -75,7 +76,7 @@ export function ResumeCard({
           </h3>
           <p className="mt-0.5 truncate text-xs text-ink-subtle">
             Updated {formatUpdated(resume.updatedAt)} ·{' '}
-            <span className="capitalize">{resume.template}</span>
+            <span>{getTemplate(resume.template).name}</span>
           </p>
         </div>
 

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/Input'
 import { LoadingState, Spinner } from '@/components/ui/LoadingState'
 import { ResumePreview } from '@/components/resume/ResumePreview'
 import { aiApi, type AiInterviewResult, type InterviewMessage } from '@/api/ai.api'
+import { getPreferredTemplate } from '@/lib/preferredTemplate'
 import { resumesApi } from '@/api/resumes.api'
 import { getApiErrorMessage } from '@/api/client'
 import type { Resume, ResumeInput } from '@/types/resume'
@@ -269,6 +270,7 @@ export function AiInterviewPage() {
           // transcript with it so it can be continued later.
           await resumesApi.create({
             title: title.trim() || draft.experience?.[0]?.role || 'Untitled Resume',
+            template: getPreferredTemplate(),
             ...draft,
             creationMethod: 'ai-interview',
             aiInterview: { status: 'in-progress', messages },
