@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import type { Resume } from '@/types/resume'
 import { buttonClasses } from '@/components/ui/Button'
 import { getTemplate } from '@/templates/catalog'
+import { resumeEditPath } from '@/lib/resumeRoutes'
 import { Menu, MenuItem, MenuSeparator } from '@/components/ui/Menu'
 
 /** Format an ISO date into a short, friendly "Updated" label. */
@@ -44,11 +45,15 @@ export function ResumeCard({
 }: ResumeCardProps) {
   const ats = resume.atsAnalysis
 
+  // Manual resumes reopen in the step builder; everything else in the full
+  // editor. Resolved once so all three links on this card always agree.
+  const editPath = resumeEditPath(resume)
+
   return (
     <div className="group relative flex flex-col rounded-xl border border-slate-200 bg-white p-4 transition-colors hover:border-brand-200">
       {/* Thumbnail — also the primary navigation target. */}
       <Link
-        to={`/resume/${resume._id}`}
+        to={editPath}
         tabIndex={-1}
         aria-hidden
         className="flex h-28 items-center justify-center rounded-lg bg-brand-gradient-soft ring-1 ring-brand-100/70"
@@ -68,7 +73,7 @@ export function ResumeCard({
             {/* Stretched link makes the whole card clickable without nesting
                 interactive elements inside an anchor. */}
             <Link
-              to={`/resume/${resume._id}`}
+              to={editPath}
               className="after:absolute after:inset-0 after:content-[''] hover:text-brand-700"
             >
               {resume.title}
@@ -157,7 +162,7 @@ export function ResumeCard({
       <div className="relative z-10 mt-3.5">
         {/* A router Link, not an anchor: Open should not reload the app. */}
         <Link
-          to={`/resume/${resume._id}`}
+          to={editPath}
           className={buttonClasses({ variant: 'secondary', size: 'sm', className: 'w-full' })}
         >
           Open

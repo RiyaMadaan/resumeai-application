@@ -1,8 +1,20 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { cn } from '@/lib/cn'
 import { Logo } from '@/components/ui/Logo'
 import { Button } from '@/components/ui/Button'
 import { Menu, MenuItem, MenuSeparator } from '@/components/ui/Menu'
 import { useAuth } from '@/context/AuthContext'
+
+/**
+ * The two areas the app is organised around.
+ *
+ * `/dashboard` is the resume list and `/cover-letters` the letter list; both
+ * routes already exist, so this is navigation to them rather than anything new.
+ */
+const NAV_LINKS = [
+  { to: '/dashboard', label: 'Resumes' },
+  { to: '/cover-letters', label: 'Cover letters' },
+]
 
 /**
  * AppNavbar — top bar for the authenticated application (distinct from the
@@ -27,9 +39,32 @@ export function AppNavbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-container items-center justify-between gap-3 px-5 sm:px-6 lg:px-8">
-        <Link to="/dashboard" className="flex items-center" aria-label="ResumeAI dashboard">
-          <Logo />
-        </Link>
+        <div className="flex min-w-0 items-center gap-6">
+          <Link to="/dashboard" className="flex items-center" aria-label="ResumeAI dashboard">
+            <Logo />
+          </Link>
+
+          {/* The app's two main areas. Kept to two links so the bar stays
+              compact — everything else lives in the account menu. */}
+          <nav aria-label="Main" className="flex items-center gap-1">
+            {NAV_LINKS.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                className={({ isActive }) =>
+                  cn(
+                    'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2',
+                    isActive
+                      ? 'bg-brand-50 text-brand-700'
+                      : 'text-ink-muted hover:bg-slate-100 hover:text-ink',
+                  )
+                }
+              >
+                {link.label}
+              </NavLink>
+            ))}
+          </nav>
+        </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
           <Button size="sm" onClick={() => navigate('/resume/new')}>
@@ -74,22 +109,6 @@ export function AppNavbar() {
                   <p className="truncate text-xs text-ink-subtle">{user?.email}</p>
                 </div>
                 <MenuSeparator />
-                <MenuItem
-                  onSelect={() => {
-                    close()
-                    navigate('/dashboard')
-                  }}
-                >
-                  My resumes
-                </MenuItem>
-                <MenuItem
-                  onSelect={() => {
-                    close()
-                    navigate('/cover-letters')
-                  }}
-                >
-                  Cover letters
-                </MenuItem>
                 <MenuItem
                   onSelect={() => {
                     close()

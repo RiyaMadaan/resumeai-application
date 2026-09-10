@@ -73,6 +73,9 @@ export type TemplateVariant = string
 /** Slugs only — no spaces, no punctuation beyond a hyphen, and bounded. */
 export const TEMPLATE_ID_PATTERN = /^[a-z][a-z0-9-]{0,39}$/
 
+/** Builder step ids are short lowercase slugs, e.g. "personal", "review". */
+export const BUILDER_STEP_PATTERN = /^[a-z][a-z0-9-]{0,39}$/
+
 /**
  * Plain value shapes for the resume's sections.
  *
@@ -126,6 +129,15 @@ export interface ResumeContent {
   projects: ProjectValue[]
   certifications: string[]
   template: TemplateVariant
+  /**
+   * The manual builder's last step. Unlike `atsAnalysis`, this is the user's
+   * own UI progress rather than a derived score, so it is safe for a client to
+   * write and belongs on the normal update path.
+   *
+   * Nullable to match what Mongoose produces for an optional String with no
+   * default — a resume that never went through the builder simply has none.
+   */
+  builderStep?: string | null
 }
 
 
@@ -177,7 +189,20 @@ const atsAnalysisSchema = new Schema(
 )
 
 /** How a resume came into being. Recorded once, never rewritten. */
-export const CREATION_METHODS = ['scratch', 'story', 'upload', 'ai-interview'] as const
+export const CREATION_METHODS = [
+  'scratch',
+  'story',
+  'upload',
+  'ai-interview',
+  /**
+   * The step-by-step builder.
+   *
+   * Added after the other four, so every resume predating it keeps whatever
+   * method it was created with and continues to open in the full editor. Only
+   * resumes actually built with the step flow carry this value.
+   */
+  'manual',
+] as const
 export type CreationMethod = (typeof CREATION_METHODS)[number]
 
 /**
@@ -242,6 +267,26 @@ const resumeSchema = new Schema(
     // How this resume was made, and the interview behind it if there was one.
     // Both are metadata, written only by the flows that own them.
     creationMethod: { type: String, enum: CREATION_METHODS, default: 'scratch' },
+
+    /**
+     * The step the manual builder was last on, e.g. "experience".
+     *
+     * Progress has to survive a refresh, a different device and a fresh login,
+     * so it lives here rather than in component state or localStorage. Left
+     * undefined for every resume not built with the step flow.
+     *
+     * Validated by shape rather than against a fixed list: the steps are
+     * defined in the frontend builder, and an unrecognised value simply
+     * reopens at the first step, so there is nothing to keep in sync here.
+     */
+    builderStep: {
+      type: String,
+      default: undefined,
+      validate: {
+        validator: (value: string) => BUILDER_STEP_PATTERN.test(value),
+        message: 'Invalid builder step',
+      },
+    },
     aiInterview: { type: aiInterviewSchema, default: undefined },
   },
   { timestamps: true },

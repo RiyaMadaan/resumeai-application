@@ -178,6 +178,12 @@ export function BuilderPage() {
    * server just received. Recording the id first makes that a no-op.
    */
   const loadedId = useRef<string | null>(null)
+  /**
+   * The current step, readable from `persist` without becoming a dependency.
+   * Navigation should record where the user got to, not restart the autosave
+   * debounce for a change that isn't content.
+   */
+  const stepRef = useRef(0)
 
   /* ── Load an in-progress resume ─────────────────────────────────────────── */
   useEffect(() => {
@@ -199,6 +205,14 @@ export function BuilderPage() {
           projects: data.projects ?? [],
           certifications: data.certifications ?? [],
         })
+        // Resume where they left off. An unknown or missing step (an older
+        // resume, or one saved by a future version) simply starts at the top.
+        const savedIndex = STEPS.findIndex((s) => s.id === data.builderStep)
+        if (savedIndex >= 0) {
+          stepRef.current = savedIndex
+          setStep(savedIndex)
+          setFurthest(savedIndex)
+        }
       })
       .catch((err) => active && setError(getApiErrorMessage(err, 'Could not load this resume')))
       .finally(() => {
@@ -249,6 +263,9 @@ export function BuilderPage() {
         summary,
         skills,
         template,
+        // Progress lives with the resume, so reopening it later — on any
+        // device, after any login — returns to this step.
+        builderStep: STEPS[stepRef.current].id,
         ...tidySections(sections),
       }
       if (resumeId) {
@@ -256,7 +273,10 @@ export function BuilderPage() {
       } else {
         creating.current = true
         try {
-          const created = await resumesApi.create(payload)
+          // `creationMethod` is only honoured on create; the server fixes
+          // provenance at birth. This is what makes the resume reopen here
+          // rather than in the full editor.
+          const created = await resumesApi.create({ ...payload, creationMethod: 'manual' })
           // Claim the id before it reaches the URL, so the loader skips it.
           loadedId.current = created._id
           setResumeId(created._id)
@@ -275,27 +295,44 @@ export function BuilderPage() {
     }
   }, [hasContent, title, summary, skills, template, sections, resumeId, navigate])
 
-  /** Debounced autosave — one request per pause, not one per keystroke. */
+  /**
+   * Debounced autosave — one request per pause, not one per keystroke.
+   *
+   * `step` is a dependency so moving between steps records progress through
+   * the same debounce rather than firing a second request alongside a pending
+   * one.
+   */
   useEffect(() => {
     if (loading || !hydrated.current || !hasContent) return
     const timer = setTimeout(persist, AUTOSAVE_DELAY_MS)
     return () => clearTimeout(timer)
-  }, [persist, loading, hasContent])
+  }, [persist, loading, hasContent, step])
 
   const updateSections = (patch: Partial<ResumeSections>) =>
     setSections((current) => ({ ...current, ...patch }))
 
   const goTo = (index: number) => {
     const next = Math.max(0, Math.min(STEPS.length - 1, index))
+    stepRef.current = next
     setStep(next)
     setFurthest((f) => Math.max(f, next))
     setMobileTab('edit')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const handleFinish = async () => {
+  /** Open the full editor on this resume, having flushed any pending changes. */
+  const handleOpenFullEditor = async () => {
     await persist()
     if (resumeId) navigate(`/resume/${resumeId}`)
+  }
+
+  /**
+   * Leave for the dashboard. The save is awaited rather than left to the
+   * debounce, so closing the builder can never drop the last few keystrokes.
+   */
+  const handleSaveAndExit = async () => {
+    await persist()
+    navigate('/dashboard')
   }
 
   if (loading) return <LoadingState label="Loading your resume…" fullscreen />
@@ -381,23 +418,34 @@ export function BuilderPage() {
 
       {stepBody}
 
-      {/* Navigation */}
+      {/* Navigation. Back always means the previous step — leaving the builder
+          is only ever "Save & exit", never a side effect of going back. */}
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
         <Button variant="secondary" onClick={() => goTo(step - 1)} disabled={step === 0}>
           ← Back
         </Button>
         <div className="flex flex-wrap items-center gap-2">
-          {step < STEPS.length - 1 && (
-            <Button variant="ghost" onClick={() => goTo(STEPS.length - 1)}>
-              Skip to review
-            </Button>
-          )}
-          {step === STEPS.length - 1 ? (
-            <Button onClick={handleFinish} disabled={!resumeId && !hasContent}>
-              Open full editor →
-            </Button>
+          {step < STEPS.length - 1 ? (
+            <>
+              <Button variant="ghost" onClick={() => goTo(STEPS.length - 1)}>
+                Skip to review
+              </Button>
+              <Button onClick={() => goTo(step + 1)}>Continue →</Button>
+            </>
           ) : (
-            <Button onClick={() => goTo(step + 1)}>Continue →</Button>
+            <>
+              <Button
+                variant="ghost"
+                onClick={handleOpenFullEditor}
+                disabled={!resumeId}
+                title="Edit every section at once, with the AI tools"
+              >
+                Open full editor →
+              </Button>
+              <Button onClick={handleSaveAndExit} disabled={!hasContent}>
+                Save &amp; exit
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -425,10 +473,10 @@ export function BuilderPage() {
     <Container className="py-6 sm:py-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
-          onClick={() => navigate('/dashboard')}
+          onClick={handleSaveAndExit}
           className="self-start text-sm font-medium text-ink-muted transition-colors hover:text-brand-700"
         >
-          ← Save and exit
+          ← Save &amp; exit to dashboard
         </button>
         <span className="text-xs text-ink-subtle" role="status">
           {saving

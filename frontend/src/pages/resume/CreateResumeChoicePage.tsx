@@ -38,8 +38,10 @@ function Choice({ icon, title, description, cta, onSelect }: ChoiceProps) {
 /**
  * CreateResumeChoicePage — step one of creating a resume.
  *
- * Both paths end in the same editor; the only difference is where the starting
- * content comes from. Kept to two cards and one line of explanation each.
+ * The routes are grouped by who does the writing: the manual builder, where
+ * the user fills everything in themselves, and the AI routes, where content is
+ * drafted for them. Every route produces the same resume record — the only
+ * lasting difference is that a manual resume reopens in its own builder.
  */
 export function CreateResumeChoicePage() {
   const navigate = useNavigate()
@@ -48,7 +50,7 @@ export function CreateResumeChoicePage() {
   const template = getTemplate(getPreferredTemplate())
 
   return (
-    <Container className="max-w-3xl py-10 sm:py-14">
+    <Container className="max-w-4xl py-10 sm:py-14">
       <button
         onClick={() => navigate('/dashboard')}
         className="mb-6 text-sm font-medium text-ink-muted transition-colors hover:text-brand-700"
@@ -56,8 +58,13 @@ export function CreateResumeChoicePage() {
         ← Back to dashboard
       </button>
 
-      <h1 className="text-2xl font-bold tracking-tight text-ink">Create your resume</h1>
-      <p className="mt-1 text-sm text-ink-muted">Choose how you'd like to start.</p>
+      <h1 className="text-2xl font-bold tracking-tight text-ink">
+        How do you want to build your resume?
+      </h1>
+      <p className="mt-1 text-sm text-ink-muted">
+        Both routes produce an ordinary resume — you can switch templates, run an ATS check or
+        tailor it to a job either way.
+      </p>
 
       {/* The starting template. Changing it here is optional — every resume can
           switch template later from its editor. */}
@@ -79,14 +86,35 @@ export function CreateResumeChoicePage() {
         </Button>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Choice
-          icon={<LayoutIcon width={20} height={20} />}
-          title="Build manually"
-          description="Fill it in step by step, with a live preview beside you the whole way."
-          cta="Start building"
-          onSelect={() => navigate('/resume/new/builder')}
-        />
+      {/* Manual first: it is the one route where nothing is written for you,
+          and the one that reopens in its own builder later. */}
+      <section className="mt-8" aria-labelledby="manual-heading">
+        <h2 id="manual-heading" className="flex items-center gap-2 text-sm font-semibold text-ink">
+          <span aria-hidden>📝</span> Build manually
+        </h2>
+        <p className="mt-0.5 text-sm text-ink-muted">
+          Fill in each section yourself. Reopens in the same step-by-step builder whenever you come
+          back to it.
+        </p>
+        <div className="mt-3 grid gap-4 sm:grid-cols-2">
+          <Choice
+            icon={<LayoutIcon width={20} height={20} />}
+            title="Step-by-step builder"
+            description="Nine short steps with your resume previewing live beside you the whole way."
+            cta="Start building"
+            onSelect={() => navigate('/resume/new/builder')}
+          />
+        </div>
+      </section>
+
+      <section className="mt-8" aria-labelledby="ai-heading">
+        <h2 id="ai-heading" className="flex items-center gap-2 text-sm font-semibold text-ink">
+          <span aria-hidden>✨</span> Build with AI
+        </h2>
+        <p className="mt-0.5 text-sm text-ink-muted">
+          AI structures and improves your content. You review everything before it is saved.
+        </p>
+        <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Choice
           icon={<PencilIcon width={20} height={20} />}
           title="Describe your career"
@@ -108,7 +136,8 @@ export function CreateResumeChoicePage() {
           cta="Upload resume"
           onSelect={() => navigate('/resume/new/upload')}
         />
-      </div>
+        </div>
+      </section>
     </Container>
   )
 }

@@ -16,6 +16,7 @@ import { ResumeSectionsEditor, type ResumeSections } from '@/components/resume/R
 import { TemplateGallery } from '@/components/resume/TemplateGallery'
 import { Modal } from '@/components/ui/Modal'
 import { getTemplate } from '@/templates/catalog'
+import { isManualResume } from '@/lib/resumeRoutes'
 import { TemplateThumbnail } from '@/templates/TemplateThumbnail'
 import { resumesApi, type ImportSummary } from '@/api/resumes.api'
 import { getApiErrorMessage } from '@/api/client'
@@ -336,12 +337,25 @@ export function ResumeEditorPage() {
     <Container className="py-6 sm:py-8">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <button
-          onClick={() => navigate('/dashboard')}
-          className="self-start text-sm font-medium text-ink-muted transition-colors hover:text-brand-700"
-        >
-          ← Back to dashboard
-        </button>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="self-start text-sm font-medium text-ink-muted transition-colors hover:text-brand-700"
+          >
+            ← Back to dashboard
+          </button>
+          {/* Resumes built with the step flow can return to it: the full
+              editor is a deliberate detour, not a one-way door. Both read and
+              write the same record, so nothing is lost either way. */}
+          {isManualResume(resume) && id && (
+            <button
+              onClick={() => navigate(`/resume/builder/${id}`)}
+              className="self-start text-sm font-medium text-brand-700 transition-colors hover:text-brand-800"
+            >
+              Back to step-by-step builder
+            </button>
+          )}
+        </div>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {savedAt && (
             <span className="text-xs text-ink-subtle" role="status">

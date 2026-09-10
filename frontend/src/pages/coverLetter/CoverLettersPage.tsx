@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Container } from '@/components/ui/Container'
-import { Button } from '@/components/ui/Button'
+import { Button, buttonClasses } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { Menu, MenuItem } from '@/components/ui/Menu'
@@ -146,17 +146,32 @@ export function CoverLettersPage() {
                 </Menu>
               </div>
 
-              <p className="mt-1 text-xs text-ink-subtle">Updated {formatUpdated(letter.updatedAt)}</p>
+              {/* Who it's for, then when it changed. */}
+              {(letter.jobTitle || letter.company) && (
+                <p className="mt-1 truncate text-xs font-medium text-brand-700">
+                  {letter.jobTitle || 'Role not set'}
+                  {letter.company && <span className="text-ink-muted"> · {letter.company}</span>}
+                </p>
+              )}
+              <p className="mt-1 text-xs text-ink-subtle">
+                Updated {formatUpdated(letter.updatedAt)}
+                {!letter.generatedAt && ' · Draft'}
+              </p>
 
               <p className="mt-3 flex-1 text-xs leading-relaxed text-ink-muted line-clamp-4">
                 {letter.body.trim() || 'Not generated yet — open it to write the draft.'}
               </p>
 
-              {(letter.company || letter.jobTitle) && (
-                <p className="mt-3 truncate text-xs font-medium text-brand-700">
-                  {[letter.jobTitle, letter.company].filter(Boolean).join(' · ')}
-                </p>
-              )}
+              {/* An explicit action, above the card's stretched link so it is
+                  the thing actually clicked. */}
+              <div className="relative z-10 mt-3.5">
+                <Link
+                  to={`/cover-letters/${letter._id}`}
+                  className={buttonClasses({ variant: 'secondary', size: 'sm', className: 'w-full' })}
+                >
+                  Open
+                </Link>
+              </div>
             </div>
           ))}
         </div>

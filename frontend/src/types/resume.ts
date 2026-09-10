@@ -100,7 +100,13 @@ export interface AtsAnalysis {
 }
 
 /** How a resume came into being. */
-export type CreationMethod = 'scratch' | 'story' | 'upload' | 'ai-interview'
+export type CreationMethod =
+  | 'scratch'
+  | 'story'
+  | 'upload'
+  | 'ai-interview'
+  /** Built with the step-by-step builder. Added after the other four. */
+  | 'manual'
 
 /** The stored interview conversation behind a resume. */
 export interface AiInterviewState {
@@ -127,6 +133,13 @@ export interface Resume {
   creationMethod?: CreationMethod
   /** The AI interview attached to it, if one has been run. */
   aiInterview?: AiInterviewState
+  /**
+   * The step the manual builder was last on, e.g. "experience".
+   *
+   * Persisted server-side so progress survives a refresh, a new device and a
+   * fresh login. Absent on every resume not built with the step flow.
+   */
+  builderStep?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -144,6 +157,7 @@ export type ResumeInput = Partial<
     | 'projects'
     | 'certifications'
     | 'template'
+    | 'builderStep'
   >
 > & {
   /** Only honoured when creating; updates never rewrite provenance. */
