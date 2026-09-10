@@ -7,6 +7,10 @@ import { AccountPage } from '@/pages/account/AccountPage'
 import { CreateResumeChoicePage } from '@/pages/resume/CreateResumeChoicePage'
 import { NewResumePage } from '@/pages/resume/NewResumePage'
 import { TemplatesPage } from '@/pages/resume/TemplatesPage'
+import { BuilderPage } from '@/pages/resume/BuilderPage'
+import { CoverLettersPage } from '@/pages/coverLetter/CoverLettersPage'
+import { NewCoverLetterPage } from '@/pages/coverLetter/NewCoverLetterPage'
+import { CoverLetterEditorPage } from '@/pages/coverLetter/CoverLetterEditorPage'
 import { UploadResumePage } from '@/pages/resume/UploadResumePage'
 import { AiInterviewPage } from '@/pages/resume/AiInterviewPage'
 import { ResumeEditorPage } from '@/pages/resume/ResumeEditorPage'
@@ -24,6 +28,9 @@ import { ProtectedRoute } from '@/routes/ProtectedRoute'
  *   /templates             browse resume templates     (protected)
  *   /resume/new            create: scratch / AI / upload (protected)
  *   /resume/new/scratch    describe your career        (protected)
+ *   /resume/new/builder    step-by-step builder        (protected)
+ *   /resume/builder/:id    continue a manual build     (protected)
+ *   /cover-letters         AI cover letters            (protected)
  *   /resume/new/upload     import an existing PDF/DOCX (protected)
  *   /resume/new/interview  build a resume by conversation (protected)
  *   /customize             job description → tailored resume (protected)
@@ -49,8 +56,13 @@ function App() {
           <Route path="/templates" element={<TemplatesPage />} />
           <Route path="/resume/new" element={<CreateResumeChoicePage />} />
           <Route path="/resume/new/scratch" element={<NewResumePage />} />
+          <Route path="/resume/new/builder" element={<BuilderPage />} />
+          <Route path="/resume/builder/:id" element={<BuilderPage />} />
           <Route path="/resume/new/upload" element={<UploadResumePage />} />
           <Route path="/resume/new/interview" element={<AiInterviewPage />} />
+          <Route path="/cover-letters" element={<CoverLettersPage />} />
+          <Route path="/cover-letters/new" element={<NewCoverLetterPage />} />
+          <Route path="/cover-letters/:id" element={<CoverLetterEditorPage />} />
           <Route path="/customize" element={<CustomizeForJobPage />} />
           <Route path="/resume/:id" element={<ResumeEditorPage />} />
         </Route>

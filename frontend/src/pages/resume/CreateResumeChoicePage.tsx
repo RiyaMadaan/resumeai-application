@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/Button'
 import { TemplateThumbnail } from '@/templates/TemplateThumbnail'
 import { getTemplate } from '@/templates/catalog'
 import { getPreferredTemplate } from '@/lib/preferredTemplate'
-import { ChatIcon, PencilIcon, UploadIcon } from '@/components/ui/icons'
+import { ChatIcon, LayoutIcon, PencilIcon, UploadIcon } from '@/components/ui/icons'
 import type { ReactNode } from 'react'
 
 interface ChoiceProps {
@@ -79,11 +79,18 @@ export function CreateResumeChoicePage() {
         </Button>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Choice
+          icon={<LayoutIcon width={20} height={20} />}
+          title="Build manually"
+          description="Fill it in step by step, with a live preview beside you the whole way."
+          cta="Start building"
+          onSelect={() => navigate('/resume/new/builder')}
+        />
         <Choice
           icon={<PencilIcon width={20} height={20} />}
-          title="Start from scratch"
-          description="Describe your career in your own words."
+          title="Describe your career"
+          description="Write about yourself in your own words and let AI structure it."
           cta="Continue"
           onSelect={() => navigate('/resume/new/scratch')}
         />

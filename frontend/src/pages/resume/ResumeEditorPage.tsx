@@ -322,6 +322,7 @@ export function ResumeEditorPage() {
           onApply={handleApplyAi}
           onTailor={() => navigate(`/customize?resume=${id}`)}
           onInterview={() => navigate(`/resume/new/interview?resume=${id}`)}
+          onCoverLetter={() => navigate(`/cover-letters/new?resume=${id}`)}
           hasInterview={
             resume?.creationMethod === 'ai-interview' ||
             (resume?.aiInterview?.messages?.length ?? 0) > 0

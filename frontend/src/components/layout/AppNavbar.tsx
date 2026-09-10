@@ -77,6 +77,31 @@ export function AppNavbar() {
                 <MenuItem
                   onSelect={() => {
                     close()
+                    navigate('/dashboard')
+                  }}
+                >
+                  My resumes
+                </MenuItem>
+                <MenuItem
+                  onSelect={() => {
+                    close()
+                    navigate('/cover-letters')
+                  }}
+                >
+                  Cover letters
+                </MenuItem>
+                <MenuItem
+                  onSelect={() => {
+                    close()
+                    navigate('/templates')
+                  }}
+                >
+                  Templates
+                </MenuItem>
+                <MenuSeparator />
+                <MenuItem
+                  onSelect={() => {
+                    close()
                     navigate('/account')
                   }}
                 >

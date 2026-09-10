@@ -24,6 +24,8 @@ interface AiToolsPanelProps {
   onTailor: () => void
   /** Open the AI interview for this resume. */
   onInterview: () => void
+  /** Open the cover letter flow for this resume. */
+  onCoverLetter: () => void
   /** True when this resume already has an interview behind it. */
   hasInterview: boolean
 }
@@ -45,6 +47,7 @@ export function AiToolsPanel({
   onApply,
   onTailor,
   onInterview,
+  onCoverLetter,
   hasInterview,
 }: AiToolsPanelProps) {
   const [instruction, setInstruction] = useState('')
@@ -179,6 +182,17 @@ export function AiToolsPanel({
           </p>
           <Button size="sm" variant="secondary" className="mt-3" onClick={onTailor}>
             Tailor resume
+          </Button>
+        </div>
+
+        {/* ── Cover letter ── */}
+        <div className="p-4">
+          <h3 className="text-sm font-medium text-ink">Cover letter</h3>
+          <p className="mt-0.5 text-xs leading-relaxed text-ink-muted">
+            Write a letter for a specific job, using only what's on this resume.
+          </p>
+          <Button size="sm" variant="secondary" className="mt-3" onClick={onCoverLetter}>
+            Write cover letter
           </Button>
         </div>
 

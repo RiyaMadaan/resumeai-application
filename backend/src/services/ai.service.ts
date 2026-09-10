@@ -2499,3 +2499,180 @@ export async function scoreResumeForAts(params: AtsScoreParams): Promise<AtsScor
     targeted: Boolean(jobDescription),
   }
 }
+
+/* ──────────────────────────── cover letters ─────────────────────────────── */
+
+/**
+ * Cover letter bounds.
+ *
+ * A cover letter is one page: three to five short paragraphs. Capping the
+ * output keeps it from drifting into an essay, which is the most common way
+ * these read as machine-written.
+ */
+const MAX_COVER_LETTER_CHARS = 4000
+
+/** The ways an existing letter can be refined without rewriting it wholesale. */
+export const COVER_LETTER_REFINEMENTS = ['improve', 'concise', 'professional'] as const
+export type CoverLetterRefinement = (typeof COVER_LETTER_REFINEMENTS)[number]
+
+export interface GenerateCoverLetterParams {
+  /** The user's resume — the only permitted source of facts about them. */
+  resume: ResumeInput
+  /** The job description to tailor against. */
+  jobDescription: string
+  /** Optional target company. */
+  company?: string
+  /** Optional target job title. */
+  jobTitle?: string
+}
+
+export interface RefineCoverLetterParams extends GenerateCoverLetterParams {
+  /** The letter as it currently stands (possibly hand-edited). */
+  body: string
+  refinement: CoverLetterRefinement
+}
+
+export interface CoverLetterResult {
+  /** The letter body: plain-text paragraphs separated by blank lines. */
+  body: string
+}
+
+const COVER_LETTER_SCHEMA: Schema = {
+  type: Type.OBJECT,
+  properties: {
+    body: {
+      type: Type.STRING,
+      description:
+        'The cover letter body as plain text. Paragraphs separated by a blank line. ' +
+        'No markdown, no bullet points, no placeholder brackets, no letterhead, ' +
+        'no date line, and no "Sincerely"/signature block.',
+    },
+  },
+  required: ['body'],
+  propertyOrdering: ['body'],
+}
+
+/**
+ * The rules that keep a cover letter honest and human.
+ *
+ * The hard constraint is the same one the rest of this service enforces: the
+ * resume is the only source of truth about the candidate. A cover letter is
+ * far more tempting for a model to embellish than a resume — it is prose, and
+ * flattering invention reads naturally — so the prohibition is stated first,
+ * concretely, and in terms of the specific things that get fabricated.
+ */
+const COVER_LETTER_SYSTEM_PROMPT = `You write cover letters on behalf of a candidate, using only their resume as evidence.
+
+ABSOLUTE RULE — never invent anything about the candidate.
+You may only reference companies, job titles, dates, achievements, metrics, skills, education, certifications and projects that appear in the resume JSON you are given. If the job description asks for something the candidate does not have, do not claim it, do not imply it, and do not describe them as "familiar with" it. Simply focus on what they do have. Never write a number, percentage, team size or duration that is not in the resume. Never name an employer, school or tool that is not in the resume.
+
+WHAT TO WRITE
+- Three to four short paragraphs, under 350 words in total.
+- Open with why this specific role and company interest them, grounded in something real from their background. Never open with "I am writing to apply for" or "I am excited to apply".
+- The middle paragraphs should connect their strongest, most relevant actual experience to what the job description asks for. Choose the two or three best matches rather than listing everything.
+- Close briefly and confidently, without begging or over-thanking.
+
+HOW TO WRITE IT
+- Plain, direct, professional English. Contractions are fine.
+- Do not restate the resume line by line — a cover letter adds context and motivation, it does not duplicate.
+- Vary sentence length. Avoid the rhythm of every sentence being the same shape.
+- Banned phrasing: "I am excited to apply", "I believe I would be a great fit", "proven track record", "results-driven", "passionate about leveraging", "synergy", "dynamic environment", "wealth of experience", "I am confident that my skills", "align seamlessly", "delve", "tapestry", "testament to".
+- Do not use em dashes as a stylistic tic. Do not use bullet points or markdown.
+- If a company name is provided, name it naturally, at most twice. If a job title is provided, refer to it naturally. If either is missing, write around it — never emit "[Company Name]" or any other placeholder.
+
+FORMAT
+Return only the letter body. No date, no addresses, no "Dear Hiring Manager" salutation, and no sign-off or signature — the app adds the greeting and closing around your text.`
+
+/** Everything the model needs to know about the target role. */
+function coverLetterContext(params: GenerateCoverLetterParams): string {
+  const target = [
+    params.jobTitle?.trim() ? `Target job title: ${params.jobTitle.trim()}` : null,
+    params.company?.trim() ? `Target company: ${params.company.trim()}` : null,
+  ].filter(Boolean)
+
+  return (
+    `Here is my resume as JSON. Every fact in it is the only ground truth about me:\n\n` +
+    `${JSON.stringify(toContext(params.resume), null, 2)}\n\n` +
+    (target.length > 0 ? `${target.join('\n')}\n\n` : '') +
+    `Here is the job description:\n\n"""\n${params.jobDescription}\n"""\n`
+  )
+}
+
+/** Trim, normalise blank lines, and enforce the length ceiling. */
+function tidyLetter(raw: unknown): string {
+  const text = typeof raw === 'string' ? raw : ''
+  const cleaned = text
+    .replace(/\r\n/g, '\n')
+    // Collapse three or more newlines into a single paragraph break.
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+  return cleaned.length > MAX_COVER_LETTER_CHARS
+    ? cleaned.slice(0, MAX_COVER_LETTER_CHARS).trimEnd()
+    : cleaned
+}
+
+/** Write a first draft of a cover letter from a resume and a job description. */
+export async function generateCoverLetter(
+  params: GenerateCoverLetterParams,
+): Promise<CoverLetterResult> {
+  const parsed = await generateStructured<{ body?: unknown }>({
+    systemPrompt: COVER_LETTER_SYSTEM_PROMPT,
+    maxOutputTokens: 4000,
+    schema: COVER_LETTER_SCHEMA,
+    userText:
+      `${coverLetterContext(params)}\n` +
+      `Write my cover letter for this role, following every rule. ` +
+      `Use only what is in my resume above — if the job asks for something I don't have, ` +
+      `leave it out rather than claiming it.`,
+  })
+
+  const body = tidyLetter(parsed.body)
+  if (!body) {
+    throw new ApiError(502, 'The AI returned an empty cover letter. Please try again.')
+  }
+  return { body }
+}
+
+/** What each refinement asks the model to change, and what it must preserve. */
+const REFINEMENT_INSTRUCTIONS: Record<CoverLetterRefinement, string> = {
+  improve:
+    'Improve this letter: sharpen the opening, make the connection to the job description more specific, ' +
+    'and cut anything vague or generic. Keep roughly the same length.',
+  concise:
+    'Make this letter shorter and tighter — aim for around 200 words. Remove repetition, filler and ' +
+    'any sentence that does not earn its place. Keep the strongest, most specific evidence.',
+  professional:
+    'Make the tone more formal and professional, while keeping it natural and readable. ' +
+    'Do not make it stiff, and do not introduce corporate cliché.',
+}
+
+/**
+ * Rewrite an existing letter in one specific direction.
+ *
+ * The current body is authoritative: the user may have edited it by hand, so a
+ * refinement adjusts what is there rather than regenerating from scratch. The
+ * resume is still supplied so the model can keep every claim evidenced — and
+ * so it cannot "improve" the letter by inventing something flattering.
+ */
+export async function refineCoverLetter(
+  params: RefineCoverLetterParams,
+): Promise<CoverLetterResult> {
+  const parsed = await generateStructured<{ body?: unknown }>({
+    systemPrompt: COVER_LETTER_SYSTEM_PROMPT,
+    maxOutputTokens: 4000,
+    schema: COVER_LETTER_SCHEMA,
+    userText:
+      `${coverLetterContext(params)}\n` +
+      `Here is my current cover letter:\n\n"""\n${params.body}\n"""\n\n` +
+      `${REFINEMENT_INSTRUCTIONS[params.refinement]}\n\n` +
+      `Rewrite it accordingly. Keep every factual claim traceable to my resume above — ` +
+      `do not add any company, metric, skill or achievement that isn't already there. ` +
+      `Preserve anything I have clearly written myself unless it conflicts with the instruction.`,
+  })
+
+  const body = tidyLetter(parsed.body)
+  if (!body) {
+    throw new ApiError(502, 'The AI returned an empty cover letter. Please try again.')
+  }
+  return { body }
+}

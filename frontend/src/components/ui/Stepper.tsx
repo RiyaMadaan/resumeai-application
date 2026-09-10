@@ -4,6 +4,17 @@ interface StepperProps {
   steps: string[]
   /** Zero-based index of the active step. */
   current: number
+  /**
+   * Jump to a step. When given, every step the user has already reached
+   * becomes a button; without it the stepper stays a read-only indicator, as
+   * the linear flows want.
+   */
+  onSelect?: (index: number) => void
+  /**
+   * The furthest step reached so far. Steps up to here are selectable even
+   * when the user has navigated back. Defaults to `current`.
+   */
+  maxReached?: number
   className?: string
 }
 
@@ -13,17 +24,33 @@ interface StepperProps {
  * Rendered as an ordered list so the sequence is conveyed to assistive tech,
  * with the active step marked via `aria-current`.
  */
-export function Stepper({ steps, current, className }: StepperProps) {
+export function Stepper({ steps, current, onSelect, maxReached, className }: StepperProps) {
+  const furthest = Math.max(maxReached ?? current, current)
   return (
     <ol className={cn('flex items-center gap-2 sm:gap-3', className)}>
       {steps.map((step, i) => {
         const done = i < current
         const active = i === current
+        const selectable = !!onSelect && i <= furthest && !active
+        // A step is a button only when it can actually be jumped to, so the
+        // read-only usage keeps its original markup and semantics.
+        const Tag = selectable ? 'button' : 'span'
         return (
           <li key={step} className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-            <span
+            <Tag
+              {...(selectable
+                ? {
+                    type: 'button' as const,
+                    onClick: () => onSelect?.(i),
+                    'aria-label': `Go to step ${i + 1}: ${step}`,
+                  }
+                : {})}
               aria-current={active ? 'step' : undefined}
-              className="flex min-w-0 items-center gap-2"
+              className={cn(
+                'flex min-w-0 items-center gap-2',
+                selectable &&
+                  'rounded-lg transition-opacity hover:opacity-70 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2',
+              )}
             >
               <span
                 className={cn(
@@ -43,7 +70,7 @@ export function Stepper({ steps, current, className }: StepperProps) {
               >
                 {step}
               </span>
-            </span>
+            </Tag>
             {i < steps.length - 1 && (
               <span
                 aria-hidden

@@ -15,10 +15,26 @@ export interface ResumeSections {
   certifications: string[]
 }
 
+/** The sections this editor can render, addressable individually. */
+export type ResumeSectionId =
+  | 'personal'
+  | 'experience'
+  | 'projects'
+  | 'education'
+  | 'certifications'
+
 interface ResumeSectionsEditorProps {
   value: ResumeSections
   /** Patch one or more sections. Local state only — the page owns saving. */
   onChange: (patch: Partial<ResumeSections>) => void
+  /**
+   * Render only these sections, in the editor's own order. Defaults to all of
+   * them, which is what the resume editor wants; the step-by-step builder
+   * passes one at a time so both flows share exactly these form controls.
+   */
+  only?: ResumeSectionId[]
+  /** Expand sections on mount — the builder shows one section per step. */
+  alwaysOpen?: boolean
 }
 
 const emptyExperience: Experience = {
@@ -97,8 +113,16 @@ function RemoveButton({ label, onClick }: { label: string; onClick: () => void }
  * five jobs and four projects navigable. Changes are local: they flow up to the
  * editor page, which owns the live preview and Save.
  */
-export function ResumeSectionsEditor({ value, onChange }: ResumeSectionsEditorProps) {
+export function ResumeSectionsEditor({
+  value,
+  onChange,
+  only,
+  alwaysOpen,
+}: ResumeSectionsEditorProps) {
   const { personalInfo, experience, education, projects, certifications } = value
+
+  /** Whether a given section should render at all. */
+  const show = (section: ResumeSectionId) => !only || only.includes(section)
 
   const setPersonal = (patch: Partial<PersonalInfo>) =>
     onChange({ personalInfo: { ...personalInfo, ...patch } })
@@ -115,10 +139,11 @@ export function ResumeSectionsEditor({ value, onChange }: ResumeSectionsEditorPr
   return (
     <div className="space-y-3">
       {/* ── Personal info ── */}
+      {show('personal') && (
       <Collapsible
         title="Personal details"
         summary={personalInfo.fullName || `${filledContactCount} of 6 fields filled`}
-        defaultOpen={!personalInfo.fullName}
+        defaultOpen={alwaysOpen || !personalInfo.fullName}
       >
         <div className="space-y-3">
           <Input
@@ -164,11 +189,14 @@ export function ResumeSectionsEditor({ value, onChange }: ResumeSectionsEditorPr
           />
         </div>
       </Collapsible>
+      )}
 
       {/* ── Experience ── */}
+      {show('experience') && (
       <Collapsible
         title="Experience"
         summary={countLabel(experience.length, 'position', 'positions')}
+        defaultOpen={alwaysOpen}
       >
         <div className="space-y-3">
           {experience.map((entry, index) => (
@@ -284,9 +312,15 @@ export function ResumeSectionsEditor({ value, onChange }: ResumeSectionsEditorPr
           />
         </div>
       </Collapsible>
+      )}
 
       {/* ── Projects ── */}
-      <Collapsible title="Projects" summary={countLabel(projects.length, 'project', 'projects')}>
+      {show('projects') && (
+      <Collapsible
+        title="Projects"
+        summary={countLabel(projects.length, 'project', 'projects')}
+        defaultOpen={alwaysOpen}
+      >
         <div className="space-y-3">
           {projects.map((entry, index) => (
             <Collapsible
@@ -356,9 +390,15 @@ export function ResumeSectionsEditor({ value, onChange }: ResumeSectionsEditorPr
           />
         </div>
       </Collapsible>
+      )}
 
       {/* ── Education ── */}
-      <Collapsible title="Education" summary={countLabel(education.length, 'entry', 'entries')}>
+      {show('education') && (
+      <Collapsible
+        title="Education"
+        summary={countLabel(education.length, 'entry', 'entries')}
+        defaultOpen={alwaysOpen}
+      >
         <div className="space-y-3">
           {education.map((entry, index) => (
             <Collapsible
@@ -439,11 +479,14 @@ export function ResumeSectionsEditor({ value, onChange }: ResumeSectionsEditorPr
           />
         </div>
       </Collapsible>
+      )}
 
       {/* ── Certifications ── */}
+      {show('certifications') && (
       <Collapsible
         title="Certifications"
         summary={countLabel(certifications.filter(Boolean).length, 'certification', 'certifications')}
+        defaultOpen={alwaysOpen}
       >
         <Textarea
           label="Certifications"
@@ -454,6 +497,7 @@ export function ResumeSectionsEditor({ value, onChange }: ResumeSectionsEditorPr
           placeholder={'AWS Certified Cloud Practitioner\nGoogle UX Design Certificate'}
         />
       </Collapsible>
+      )}
     </div>
   )
 }
