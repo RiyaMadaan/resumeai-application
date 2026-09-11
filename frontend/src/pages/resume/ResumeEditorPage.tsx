@@ -698,7 +698,7 @@ export function ResumeEditorPage() {
        of the window empty and squeezed the preview — the thing the page is
        actually for — into whatever was left. Below `lg` this all collapses
        back to ordinary page flow. */
-    <div className="flex flex-col lg:h-[calc(100vh-4rem)] lg:overflow-hidden">
+    <div className="flex flex-col lg:h-screen lg:overflow-hidden">
       {/* Header — one quiet row. The AI tools moved into the sidebar, where
           they sit beside the sections they act on rather than in a dropdown
           floating over the middle of the page. */}

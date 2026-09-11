@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Container } from '@/components/ui/Container'
 import { Button } from '@/components/ui/Button'
@@ -7,6 +7,8 @@ import { Modal } from '@/components/ui/Modal'
 import { Input } from '@/components/ui/Input'
 import { ResumeCardSkeleton } from '@/components/ui/Skeleton'
 import { ResumeCard } from '@/components/resume/ResumeCard'
+import { PlusIcon } from '@/components/ui/icons'
+import { getTemplate } from '@/templates/catalog'
 import { AtsScoreModal } from '@/components/resume/AtsScoreModal'
 import { resumesApi } from '@/api/resumes.api'
 import { getApiErrorMessage } from '@/api/client'
@@ -26,6 +28,7 @@ export function DashboardPage() {
   const navigate = useNavigate()
 
   const [resumes, setResumes] = useState<Resume[]>([])
+  const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -119,23 +122,70 @@ export function DashboardPage() {
     }
   }
 
+  const visibleResumes = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return resumes
+    return resumes.filter(
+      (r) =>
+        r.title.toLowerCase().includes(q) ||
+        (r.personalInfo?.fullName ?? '').toLowerCase().includes(q) ||
+        getTemplate(r.template).name.toLowerCase().includes(q),
+    )
+  }, [resumes, query])
+
+  /** "Good morning/afternoon/evening", as the reference greets people. */
+  const greeting = (() => {
+    const hour = new Date().getHours()
+    if (hour < 12) return 'Good morning'
+    if (hour < 18) return 'Good afternoon'
+    return 'Good evening'
+  })()
+
   return (
     <Container className="py-8 sm:py-12">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-ink">Your resumes</h1>
+      {/* Header — a greeting, then the two things you come here to do. */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold tracking-tight text-ink">
+            {greeting}
+            {user ? `, ${user.name.split(' ')[0]}` : ''}
+          </h1>
           <p className="mt-1 max-w-xl text-sm text-ink-muted">
-            {user ? `Welcome back, ${user.name.split(' ')[0]}. ` : ''}
-            Continue editing an existing resume or create one tailored to your next opportunity.
+            Create, edit and tailor your resumes to land your dream job.
           </p>
         </div>
-        {resumes.length > 0 && (
-          <Button variant="secondary" onClick={() => navigate('/customize')}>
-            Tailor for a job
+        <div className="flex flex-shrink-0 flex-wrap gap-2">
+          <Button onClick={() => navigate('/resume/new')}>
+            <PlusIcon width={16} height={16} />
+            New resume
           </Button>
-        )}
+          {resumes.length > 0 && (
+            <Button variant="secondary" onClick={() => navigate('/customize')}>
+              Tailor for a job
+            </Button>
+          )}
+        </div>
       </div>
+
+      {/* Search — only earns its place once there are enough resumes to sift. */}
+      {resumes.length > 3 && (
+        <div className="relative mt-6">
+          <span aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle">
+            <svg viewBox="0 0 24 24" width={16} height={16} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M20 20l-3.5-3.5" />
+            </svg>
+          </span>
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search your resumes…"
+            aria-label="Search your resumes"
+            className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-ink placeholder:text-ink-subtle focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          />
+        </div>
+      )}
 
       {notice && (
         <p
@@ -174,7 +224,7 @@ export function DashboardPage() {
           />
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {resumes.map((resume) => (
+            {visibleResumes.map((resume) => (
               <div
                 key={resume._id}
                 className={duplicatingId === resume._id ? 'pointer-events-none opacity-60' : ''}

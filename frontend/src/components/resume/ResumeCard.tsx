@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
 import type { Resume } from '@/types/resume'
-import { buttonClasses } from '@/components/ui/Button'
+
 import { getTemplate } from '@/templates/catalog'
+import { TemplateThumbnail } from '@/templates/TemplateThumbnail'
 import { resumeEditPath } from '@/lib/resumeRoutes'
 import { Menu, MenuItem, MenuSeparator } from '@/components/ui/Menu'
 
@@ -51,18 +52,22 @@ export function ResumeCard({
 
   return (
     <div className="group relative flex flex-col rounded-xl border border-slate-200 bg-white p-4 transition-colors hover:border-brand-200">
-      {/* Thumbnail — also the primary navigation target. */}
+      {/* The resume itself, in its own template — the card's main content and
+          its primary navigation target. Rendered through the same component
+          the editor and the PDF use, so the card can't show a design the
+          resume doesn't have. */}
       <Link
         to={editPath}
         tabIndex={-1}
         aria-hidden
-        className="flex h-28 items-center justify-center rounded-lg bg-brand-gradient-soft ring-1 ring-brand-100/70"
+        className="block overflow-hidden rounded-lg bg-slate-100 p-2 ring-1 ring-slate-200/80"
       >
-        <div className="w-20 space-y-1.5 rounded-md bg-white p-2.5 shadow-sm">
-          <div className="h-1.5 w-3/4 rounded-full bg-brand-200" />
-          <div className="h-1 w-full rounded-full bg-slate-200" />
-          <div className="h-1 w-5/6 rounded-full bg-slate-200" />
-          <div className="h-1 w-2/3 rounded-full bg-slate-200" />
+        <div className="overflow-hidden rounded ring-1 ring-slate-200">
+          {/* Cropped to a letterbox: the top of a resume is the part worth
+              recognising at this size. */}
+          <div className="h-32 overflow-hidden">
+            <TemplateThumbnail spec={getTemplate(resume.template)} resume={resume} />
+          </div>
         </div>
       </Link>
 
@@ -80,8 +85,7 @@ export function ResumeCard({
             </Link>
           </h3>
           <p className="mt-0.5 truncate text-xs text-ink-subtle">
-            Updated {formatUpdated(resume.updatedAt)} ·{' '}
-            <span>{getTemplate(resume.template).name}</span>
+            Updated {formatUpdated(resume.updatedAt)}
           </p>
         </div>
 
@@ -132,42 +136,28 @@ export function ResumeCard({
         </Menu>
       </div>
 
-      {/* ATS status — compact, and the same shape whether or not a score exists. */}
-      <div className="relative z-10 mt-3.5 rounded-lg border border-slate-200 bg-slate-50/70 px-3 py-2.5">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-subtle">
-          ATS Score
-        </p>
-        <div className="mt-1 flex items-center justify-between gap-3">
-          {ats ? (
-            <p className="text-sm text-ink">
-              <span className={`font-bold tabular-nums ${scoreTone(ats.score)}`}>
-                {ats.score}
-              </span>
-              <span className="text-ink-subtle"> / 100 · </span>
-              <span className="font-medium">{ats.grade}</span>
-            </p>
-          ) : (
-            <p className="text-sm text-ink-subtle">Not checked yet</p>
-          )}
-          <button
-            type="button"
-            onClick={() => onCheckAts(resume)}
-            className="shrink-0 rounded-md text-xs font-semibold text-brand-700 transition-colors hover:text-brand-800 hover:underline"
-          >
-            {ats ? 'View report' : 'Check ATS'}
-          </button>
-        </div>
+      {/* Template and ATS as two quiet pills. The card itself is the Open
+          action — a stretched link on the title — so a separate button would
+          just be the same action twice. */}
+      <div className="relative z-10 mt-3 flex flex-wrap items-center gap-1.5">
+        <span className="rounded-md bg-brand-50 px-2 py-0.5 text-[11px] font-medium text-brand-700">
+          {getTemplate(resume.template).name}
+        </span>
+        <button
+          type="button"
+          onClick={() => onCheckAts(resume)}
+          title={ats ? `ATS ${ats.score} / 100 · ${ats.grade}` : 'Check this resume against ATS'}
+          className={
+            'rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors ' +
+            (ats
+              ? `bg-slate-100 hover:bg-slate-200 ${scoreTone(ats.score)}`
+              : 'bg-slate-100 text-ink-subtle hover:bg-slate-200 hover:text-ink')
+          }
+        >
+          {ats ? `ATS ${ats.score}%` : 'Check ATS'}
+        </button>
       </div>
 
-      <div className="relative z-10 mt-3.5">
-        {/* A router Link, not an anchor: Open should not reload the app. */}
-        <Link
-          to={editPath}
-          className={buttonClasses({ variant: 'secondary', size: 'sm', className: 'w-full' })}
-        >
-          Open
-        </Link>
-      </div>
     </div>
   )
 }
