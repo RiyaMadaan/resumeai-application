@@ -199,9 +199,23 @@ export function AtsScoreModal({
   // render. Holding it in a ref keeps `analyze` stable so the open-effect below
   // fires once instead of re-analyzing in a loop.
   const onAnalyzedRef = useRef(onAnalyzed)
+  /**
+   * The editor's current content, read at request time.
+   *
+   * The server prefers this body over the stored resume so the score reflects
+   * unsaved edits. `analyze` deliberately doesn't depend on it — a fresh
+   * object every keystroke would re-run the analysis — so without a ref it
+   * would send whatever the resume was when the callback was created, which
+   * defeats the point of sending it at all.
+   */
+  const resumeRef = useRef(resume)
   useEffect(() => {
     onAnalyzedRef.current = onAnalyzed
   }, [onAnalyzed])
+
+  useEffect(() => {
+    resumeRef.current = resume
+  }, [resume])
 
   /**
    * Guards against a second analysis while one is already in flight.
@@ -221,7 +235,7 @@ export function AtsScoreModal({
     setLoading(true)
     setError('')
     try {
-      const analysis = await aiApi.atsScore(resumeId, resume)
+      const analysis = await aiApi.atsScore(resumeId, resumeRef.current)
       setResult(analysis)
       onAnalyzedRef.current?.(analysis)
     } catch (err) {
@@ -236,7 +250,8 @@ export function AtsScoreModal({
       setLoading(false)
     }
     // `resume` is a fresh object on every editor keystroke; depending on it
-    // would re-run the analysis constantly. The id is what identifies the run.
+    // would re-run the analysis constantly, so it is read from a ref above.
+    // The id is what identifies the run.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resumeId])
 

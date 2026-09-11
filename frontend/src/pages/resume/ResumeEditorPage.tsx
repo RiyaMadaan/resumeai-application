@@ -20,6 +20,21 @@ import { SkillsInput } from '@/components/resume/SkillsInput'
 import { TemplateGallery } from '@/components/resume/TemplateGallery'
 import { Modal } from '@/components/ui/Modal'
 import { Menu, MenuItem, MenuSeparator } from '@/components/ui/Menu'
+import {
+  BriefcaseIcon,
+  CertificateIcon,
+  FolderIcon,
+  GaugeIcon,
+  GraduationIcon,
+  LayoutIcon,
+  MailIcon,
+  SparkleIcon,
+  StarIcon,
+  TargetIcon,
+  TextIcon,
+  UserIcon,
+  ChatIcon,
+} from '@/components/ui/icons'
 import { withReturnTo } from '@/lib/returnTo'
 import { getTemplate } from '@/templates/catalog'
 import { resumesApi, type ImportSummary } from '@/api/resumes.api'
@@ -75,11 +90,13 @@ interface EditorSectionDef {
   title: string
   description: string
   section?: ResumeSectionId
+  Icon: (props: { width?: number; height?: number }) => React.ReactElement
 }
 
 const EDITOR_SECTIONS: EditorSectionDef[] = [
   {
     id: 'personal',
+    Icon: UserIcon,
     label: 'Personal',
     title: 'Personal details',
     description: 'Your name and how employers reach you.',
@@ -87,12 +104,14 @@ const EDITOR_SECTIONS: EditorSectionDef[] = [
   },
   {
     id: 'summary',
+    Icon: TextIcon,
     label: 'Summary',
     title: 'Professional summary',
     description: 'Two or three sentences on who you are and what you do.',
   },
   {
     id: 'experience',
+    Icon: BriefcaseIcon,
     label: 'Experience',
     title: 'Work experience',
     description: 'Your roles, most recent first.',
@@ -100,6 +119,7 @@ const EDITOR_SECTIONS: EditorSectionDef[] = [
   },
   {
     id: 'education',
+    Icon: GraduationIcon,
     label: 'Education',
     title: 'Education',
     description: 'Degrees, diplomas and qualifications.',
@@ -107,12 +127,14 @@ const EDITOR_SECTIONS: EditorSectionDef[] = [
   },
   {
     id: 'skills',
+    Icon: StarIcon,
     label: 'Skills',
     title: 'Skills',
     description: 'The tools and abilities you want to be found for.',
   },
   {
     id: 'projects',
+    Icon: FolderIcon,
     label: 'Projects',
     title: 'Projects',
     description: 'Work worth showing that sits outside a job.',
@@ -120,6 +142,7 @@ const EDITOR_SECTIONS: EditorSectionDef[] = [
   },
   {
     id: 'certifications',
+    Icon: CertificateIcon,
     label: 'Certificates',
     title: 'Certifications',
     description: 'One per line.',
@@ -127,6 +150,7 @@ const EDITOR_SECTIONS: EditorSectionDef[] = [
   },
   {
     id: 'design',
+    Icon: LayoutIcon,
     label: 'Design',
     title: 'Template',
     description: 'Only the presentation changes — every field stays as it is.',
@@ -177,8 +201,6 @@ export function ResumeEditorPage() {
   const [aiOpen, setAiOpen] = useState(false)
   /** The preview at full size, for reading rather than editing. */
   const [previewOpen, setPreviewOpen] = useState(false)
-  /** Skips the autosave that simply loading the resume would otherwise cause. */
-  const hydrated = useRef(false)
   // The template gallery is a dialog so switching designs never loses your place.
   const [templateOpen, setTemplateOpen] = useState(false)
 
@@ -245,6 +267,25 @@ export function ResumeEditorPage() {
   /** The spec behind the currently selected template id. */
   const activeTemplate = useMemo(() => getTemplate(template), [template])
 
+  /** Exactly what a save writes — one definition, used to send and to compare. */
+  const savePayload = useMemo(
+    () => ({ title, summary, skills, template, ...tidySections(sections) }),
+    [title, summary, skills, template, sections],
+  )
+  /**
+   * A content fingerprint of that payload.
+   *
+   * Autosave has to key off what the resume *says*, not off object identity.
+   * Saving replaces `resume` and `sections` with fresh objects from the
+   * server, so an identity-keyed effect re-fires on its own result and
+   * schedules another save — a silent write every debounce interval, forever.
+   * Comparing content means a save that changed nothing cannot trigger
+   * another one.
+   */
+  const savePayloadKey = useMemo(() => JSON.stringify(savePayload), [savePayload])
+  /** The fingerprint last written to the server; null until the resume loads. */
+  const lastSavedRef = useRef<string | null>(null)
+
   const handleExportPdf = async () => {
     if (!previewResume || exporting) return
     setExporting(true)
@@ -294,30 +335,31 @@ export function ResumeEditorPage() {
    * anyone who wants to force it.
    */
   useEffect(() => {
-    if (loading || !resume || !hydrated.current) {
-      // Loading the resume sets all of this state; that isn't an edit.
-      if (resume && !loading) hydrated.current = true
+    if (loading || !resume) return
+    // The first pass after loading records what came from the server; that is
+    // the baseline, not an edit.
+    if (lastSavedRef.current === null) {
+      lastSavedRef.current = savePayloadKey
       return
     }
+    if (savePayloadKey === lastSavedRef.current) return
+
     const timer = setTimeout(() => void handleSave(), AUTOSAVE_DELAY_MS)
     return () => clearTimeout(timer)
-    // handleSave is recreated on every edit, which is what schedules the save.
+    // handleSave closes over the current payload; the fingerprint is what
+    // decides whether it should run at all.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, summary, skills, sections, template, loading, resume])
+  }, [savePayloadKey, loading, resume])
 
   const handleSave = async () => {
     if (!id || !previewResume) return
     setSaving(true)
     setError('')
+    // Captured before the request so a keystroke mid-flight isn't marked saved.
+    const sentKey = savePayloadKey
     try {
-      const tidy = tidySections(sections)
-      const updated = await resumesApi.update(id, {
-        title: previewResume.title,
-        summary: previewResume.summary,
-        skills: previewResume.skills,
-        template: previewResume.template,
-        ...tidy,
-      })
+      const updated = await resumesApi.update(id, savePayload)
+      lastSavedRef.current = sentKey
       setResume(updated)
       setSections({
         personalInfo: { ...emptyPersonalInfo, ...updated.personalInfo },
@@ -355,6 +397,19 @@ export function ResumeEditorPage() {
   const current =
     EDITOR_SECTIONS.find((entry) => entry.id === section) ?? EDITOR_SECTIONS[0]
 
+  /** The last ATS score, straight off the resume — nothing is recomputed. */
+  const atsScore = typeof resume?.atsAnalysis?.score === 'number' ? resume.atsAnalysis.score : null
+  const atsTone =
+    atsScore === null
+      ? 'text-ink-muted'
+      : atsScore >= 78
+        ? 'text-emerald-700'
+        : atsScore >= 62
+          ? 'text-brand-700'
+          : atsScore >= 45
+            ? 'text-amber-700'
+            : 'text-red-700'
+
   /**
    * The AI tools, as sidebar entries.
    *
@@ -364,12 +419,33 @@ export function ResumeEditorPage() {
    * the URL, it survives a refresh.
    */
   const here = `/resume/${id}`
-  const aiTools: { id: string; label: string; run: () => void }[] = [
-    { id: 'improve', label: 'Improve with AI', run: () => setAiOpen(true) },
+  const aiTools: {
+    id: string
+    label: string
+    run: () => void
+    Icon: (props: { width?: number; height?: number }) => React.ReactElement
+    /** True while this tool's panel is open over the editor. */
+    active?: boolean
+  }[] = [
+    {
+      id: 'improve',
+      label: 'Improve with AI',
+      Icon: SparkleIcon,
+      run: () => setAiOpen(true),
+      active: aiOpen,
+    },
     {
       id: 'customize',
       label: 'Customize for a job',
+      Icon: TargetIcon,
       run: () => navigate(withReturnTo(`/customize?resume=${id}`, here)),
+    },
+    {
+      id: 'ats',
+      label: 'ATS checker',
+      Icon: GaugeIcon,
+      run: () => setAtsOpen(true),
+      active: atsOpen,
     },
     {
       id: 'interview',
@@ -378,12 +454,13 @@ export function ResumeEditorPage() {
         (resume?.aiInterview?.messages?.length ?? 0) > 0
           ? 'Continue interview'
           : 'Resume interview',
+      Icon: ChatIcon,
       run: () => navigate(withReturnTo(`/resume/new/interview?resume=${id}`, here)),
     },
-    { id: 'ats', label: 'ATS checker', run: () => setAtsOpen(true) },
     {
       id: 'cover',
       label: 'Cover letter',
+      Icon: MailIcon,
       run: () => navigate(withReturnTo(`/cover-letters/new?resume=${id}`, here)),
     },
   ]
@@ -408,13 +485,14 @@ export function ResumeEditorPage() {
                 onClick={() => setSection(entry.id)}
                 aria-current={active ? 'true' : undefined}
                 className={
-                  'w-full rounded-lg px-3 py-1.5 text-left text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ' +
+                  'flex w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-left text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ' +
                   (active
                     ? 'bg-brand-50 font-semibold text-brand-700'
                     : 'font-medium text-ink-muted hover:bg-slate-100 hover:text-ink')
                 }
               >
-                {entry.label}
+                <entry.Icon width={16} height={16} />
+                <span className="truncate">{entry.label}</span>
               </button>
             </li>
           )
@@ -480,9 +558,16 @@ export function ResumeEditorPage() {
                   type="button"
                   onClick={tool.run}
                   disabled={!id}
-                  className="w-full rounded-lg px-3 py-1.5 text-left text-sm text-ink-muted transition-colors hover:bg-slate-100 hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:opacity-50"
+                  aria-current={tool.active ? 'true' : undefined}
+                  className={
+                    'flex w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-left text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:opacity-50 ' +
+                    (tool.active
+                      ? 'bg-brand-50 font-semibold text-brand-700'
+                      : 'text-ink-muted hover:bg-slate-100 hover:text-ink')
+                  }
                 >
-                  {tool.label}
+                  <tool.Icon width={16} height={16} />
+                  <span className="truncate">{tool.label}</span>
                 </button>
               </li>
             ))}
@@ -617,6 +702,34 @@ export function ResumeEditorPage() {
           <span className="hidden flex-shrink-0 text-xs text-ink-subtle sm:inline" role="status">
             {saving ? 'Saving…' : savedAt ? `Autosaved ✓` : ''}
           </span>
+
+          {/* The template in use, and a one-click way to change it. The Design
+              section shows the same gallery; this is the shortcut from
+              anywhere in the editor. */}
+          <button
+            type="button"
+            onClick={() => setTemplateOpen(true)}
+            className="hidden max-w-[11rem] flex-shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:bg-slate-100 hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 lg:inline-flex"
+          >
+            <LayoutIcon width={15} height={15} />
+            <span className="truncate">{activeTemplate.name}</span>
+          </button>
+
+          {/* The last ATS score, if one has been run. A readout first and a
+              way back into the report second — it never starts an analysis by
+              itself; the modal does that, once per open. */}
+          <button
+            type="button"
+            onClick={() => setAtsOpen(true)}
+            disabled={!id || atsOpen}
+            title={atsScore === null ? 'Check your ATS score' : 'View the ATS report'}
+            className="hidden flex-shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:opacity-50 md:inline-flex"
+          >
+            <GaugeIcon width={15} height={15} className={atsScore === null ? 'text-ink-subtle' : atsTone} />
+            <span className={atsScore === null ? 'text-ink-muted' : atsTone}>
+              {atsScore === null ? 'ATS' : `ATS ${atsScore}`}
+            </span>
+          </button>
 
           <Button
             size="sm"
@@ -782,6 +895,11 @@ export function ResumeEditorPage() {
           resumeId={id}
           resumeTitle={title}
           resume={previewResume ?? undefined}
+          // The analysis the modal already ran; stored so the header can show
+          // it. Never triggers a request of its own.
+          onAnalyzed={(result) =>
+            setResume((current) => (current ? { ...current, atsAnalysis: result } : current))
+          }
         />
       )}
 
