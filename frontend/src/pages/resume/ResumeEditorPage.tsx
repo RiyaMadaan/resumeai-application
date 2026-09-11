@@ -574,7 +574,9 @@ export function ResumeEditorPage() {
       </div>
       {/* The paper sits on a tinted canvas so a sparse resume still reads as a
           sheet of paper rather than a blank panel. */}
-      <div className="overflow-auto rounded-xl bg-slate-100/80 p-4 sm:p-6 lg:max-h-[calc(100vh-11rem)]">
+      {/* A permanent scrollbar here too: this column scrolls for a long resume,
+          and a bar that came and went would rescale the page each time. */}
+      <div className="overflow-y-scroll rounded-xl bg-slate-100/80 p-4 sm:p-6 lg:max-h-[calc(100vh-11rem)] [scrollbar-gutter:stable]">
         <div className="mx-auto w-full" style={{ maxWidth: 820 }}>
           {previewPaper}
         </div>
@@ -833,15 +835,29 @@ export function ResumeEditorPage() {
         </Modal>
       )}
 
-      {/* The resume at full size — for reading it, not editing it. */}
+      {/* The resume at full size — for reading it, not editing it.
+
+          The dialog's height is fixed rather than derived from the resume, so
+          it cannot grow and shrink as the page is measured, and there is
+          exactly one scrolling element inside it.
+
+          That element uses `overflow-y: scroll`, not `auto`, deliberately. The
+          flicker came from the scrollbar *toggling*: it appears, takes ~15px
+          of width, the narrower width rescales the page, the shorter page no
+          longer overflows, the bar goes away, and round it goes. A permanent
+          scrollbar cannot toggle, so the width is constant — which is what
+          actually breaks the loop. `scrollbar-gutter` expresses the same
+          intent but is too recent in Safari to rely on alone. */}
       <Modal
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}
         title={title || 'Resume preview'}
-        className="max-w-4xl max-h-[92vh] overflow-y-auto bg-slate-100"
+        className="w-[min(94vw,900px)] max-w-none"
       >
-        <div className="mx-auto w-full" style={{ maxWidth: 820 }}>
-          {previewPaper}
+        <div className="h-[calc(100vh-11rem)] max-h-[76vh] overflow-y-scroll rounded-lg bg-slate-100 p-4 [scrollbar-gutter:stable]">
+          <div className="mx-auto w-full" style={{ maxWidth: 820 }}>
+            {previewPaper}
+          </div>
         </div>
       </Modal>
 

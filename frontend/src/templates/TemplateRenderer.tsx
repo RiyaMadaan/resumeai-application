@@ -561,7 +561,7 @@ export function TemplateRenderer({
                 )}
               </div>
               <div style={{ minWidth: 0, flex: 1 }}>
-                <RoleLine exp={exp} date={dateOf(exp)} />
+                {renderRole(exp, dateOf(exp))}
               </div>
             </div>
           ))}
@@ -586,7 +586,7 @@ export function TemplateRenderer({
                 {dateOf(exp)}
               </div>
               <div style={{ minWidth: 0, flex: 1 }}>
-                <RoleLine exp={exp} date="" />
+                {renderRole(exp, '')}
               </div>
             </div>
           ))}
@@ -598,20 +598,25 @@ export function TemplateRenderer({
     return (
       <div style={{ display: 'grid', gap: Math.round((isCompact ? 9 : 13) * unit) }}>
         {items.map((exp, i) => (
-          <RoleLine key={i} exp={exp} date={dateOf(exp)} />
+          <div key={i}>{renderRole(exp, dateOf(exp))}</div>
         ))}
       </div>
     )
   }
 
-  /** One role: title line, optional location, then bullets. */
-  function RoleLine({
-    exp,
-    date,
-  }: {
-    exp: NonNullable<AnyResume['experience']>[number]
-    date: string
-  }) {
+  /**
+   * One role: title line, optional location, then bullets.
+   *
+   * A plain function returning JSX, deliberately — not a component. It closes
+   * over the spec, so it has to live inside the render; declared as a
+   * component and used as `<RoleLine/>`, it would be a *new component type* on
+   * every render, and React would unmount and rebuild every role's DOM on
+   * every keystroke rather than reconciling it.
+   */
+  function renderRole(
+    exp: NonNullable<AnyResume['experience']>[number],
+    date: string,
+  ) {
     return (
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline' }}>
