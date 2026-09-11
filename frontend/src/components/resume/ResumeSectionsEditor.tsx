@@ -35,6 +35,11 @@ interface ResumeSectionsEditorProps {
   only?: ResumeSectionId[]
   /** Expand sections on mount — the builder shows one section per step. */
   alwaysOpen?: boolean
+  /**
+   * Render the fields without the surrounding collapsible card. Use when the
+   * parent already provides the section's heading.
+   */
+  flat?: boolean
 }
 
 const emptyExperience: Experience = {
@@ -113,11 +118,42 @@ function RemoveButton({ label, onClick }: { label: string; onClick: () => void }
  * five jobs and four projects navigable. Changes are local: they flow up to the
  * editor page, which owns the live preview and Save.
  */
+/**
+ * The wrapper around one section.
+ *
+ * In the full list (the creation wizard's sections, or anywhere showing
+ * several at once) a section is a collapsible card. When the parent already
+ * renders its own title and description — the editor shows exactly one section
+ * at a time — `flat` drops the card entirely, so the fields aren't sitting
+ * inside a box inside a box under a duplicated heading.
+ */
+function SectionShell({
+  flat,
+  title,
+  summary,
+  defaultOpen,
+  children,
+}: {
+  flat?: boolean
+  title: string
+  summary?: ReactNode
+  defaultOpen?: boolean
+  children: ReactNode
+}) {
+  if (flat) return <>{children}</>
+  return (
+    <Collapsible title={title} summary={summary} defaultOpen={defaultOpen}>
+      {children}
+    </Collapsible>
+  )
+}
+
 export function ResumeSectionsEditor({
   value,
   onChange,
   only,
   alwaysOpen,
+  flat,
 }: ResumeSectionsEditorProps) {
   const { personalInfo, experience, education, projects, certifications } = value
 
@@ -140,7 +176,8 @@ export function ResumeSectionsEditor({
     <div className="space-y-3">
       {/* ── Personal info ── */}
       {show('personal') && (
-      <Collapsible
+      <SectionShell
+        flat={flat}
         title="Personal details"
         summary={personalInfo.fullName || `${filledContactCount} of 6 fields filled`}
         defaultOpen={alwaysOpen || !personalInfo.fullName}
@@ -188,12 +225,13 @@ export function ResumeSectionsEditor({
             placeholder="jordanblake.dev"
           />
         </div>
-      </Collapsible>
+      </SectionShell>
       )}
 
       {/* ── Experience ── */}
       {show('experience') && (
-      <Collapsible
+      <SectionShell
+        flat={flat}
         title="Experience"
         summary={countLabel(experience.length, 'position', 'positions')}
         defaultOpen={alwaysOpen}
@@ -311,12 +349,13 @@ export function ResumeSectionsEditor({
             onClick={() => onChange({ experience: [...experience, { ...emptyExperience }] })}
           />
         </div>
-      </Collapsible>
+      </SectionShell>
       )}
 
       {/* ── Projects ── */}
       {show('projects') && (
-      <Collapsible
+      <SectionShell
+        flat={flat}
         title="Projects"
         summary={countLabel(projects.length, 'project', 'projects')}
         defaultOpen={alwaysOpen}
@@ -389,12 +428,13 @@ export function ResumeSectionsEditor({
             onClick={() => onChange({ projects: [...projects, { ...emptyProject }] })}
           />
         </div>
-      </Collapsible>
+      </SectionShell>
       )}
 
       {/* ── Education ── */}
       {show('education') && (
-      <Collapsible
+      <SectionShell
+        flat={flat}
         title="Education"
         summary={countLabel(education.length, 'entry', 'entries')}
         defaultOpen={alwaysOpen}
@@ -478,12 +518,13 @@ export function ResumeSectionsEditor({
             onClick={() => onChange({ education: [...education, { ...emptyEducation }] })}
           />
         </div>
-      </Collapsible>
+      </SectionShell>
       )}
 
       {/* ── Certifications ── */}
       {show('certifications') && (
-      <Collapsible
+      <SectionShell
+        flat={flat}
         title="Certifications"
         summary={countLabel(certifications.filter(Boolean).length, 'certification', 'certifications')}
         defaultOpen={alwaysOpen}
@@ -496,7 +537,7 @@ export function ResumeSectionsEditor({
           hint="One per line."
           placeholder={'AWS Certified Cloud Practitioner\nGoogle UX Design Certificate'}
         />
-      </Collapsible>
+      </SectionShell>
       )}
     </div>
   )

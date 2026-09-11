@@ -16,6 +16,13 @@ interface StepperProps {
    */
   maxReached?: number
   className?: string
+  /**
+   * `full` (default) shows a numbered circle and label per step — right for a
+   * three- or four-step flow. `compact` reduces each step to a bar, with the
+   * current step named once beneath: nine numbered circles and ticks read as a
+   * checklist to complete rather than a position in a flow.
+   */
+  variant?: 'full' | 'compact'
 }
 
 /**
@@ -24,8 +31,57 @@ interface StepperProps {
  * Rendered as an ordered list so the sequence is conveyed to assistive tech,
  * with the active step marked via `aria-current`.
  */
-export function Stepper({ steps, current, onSelect, maxReached, className }: StepperProps) {
+export function Stepper({
+  steps,
+  current,
+  onSelect,
+  maxReached,
+  className,
+  variant = 'full',
+}: StepperProps) {
   const furthest = Math.max(maxReached ?? current, current)
+
+  if (variant === 'compact') {
+    return (
+      <div className={className}>
+        <div className="flex items-center gap-1.5">
+          {steps.map((step, i) => {
+            const reached = i <= furthest
+            const active = i === current
+            const selectable = !!onSelect && reached && !active
+            const Tag = selectable ? 'button' : 'div'
+            return (
+              <Tag
+                key={step}
+                {...(selectable
+                  ? {
+                      type: 'button' as const,
+                      onClick: () => onSelect?.(i),
+                      'aria-label': `Go to step ${i + 1}: ${step}`,
+                    }
+                  : {})}
+                aria-current={active ? 'step' : undefined}
+                title={step}
+                className={cn(
+                  'h-1 flex-1 rounded-full transition-colors',
+                  active ? 'bg-brand-600' : reached ? 'bg-brand-300' : 'bg-slate-200',
+                  selectable && 'cursor-pointer hover:bg-brand-400',
+                )}
+              />
+            )
+          })}
+        </div>
+        <p className="mt-2 text-xs text-ink-subtle">
+          Step {current + 1} of {steps.length}
+          <span className="mx-1.5" aria-hidden>
+            ·
+          </span>
+          <span className="font-medium text-ink">{steps[current]}</span>
+        </p>
+      </div>
+    )
+  }
+
   return (
     <ol className={cn('flex items-center gap-2 sm:gap-3', className)}>
       {steps.map((step, i) => {

@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Container } from '@/components/ui/Container'
-import { Button } from '@/components/ui/Button'
+import { Button, buttonClasses } from '@/components/ui/Button'
 import { Textarea } from '@/components/ui/Input'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { ResumePreview } from '@/components/resume/ResumePreview'
@@ -19,8 +19,8 @@ import {
 import { SkillsInput } from '@/components/resume/SkillsInput'
 import { TemplateGallery } from '@/components/resume/TemplateGallery'
 import { Modal } from '@/components/ui/Modal'
+import { Menu, MenuItem, MenuSeparator } from '@/components/ui/Menu'
 import { getTemplate } from '@/templates/catalog'
-import { isManualResume } from '@/lib/resumeRoutes'
 import { resumesApi, type ImportSummary } from '@/api/resumes.api'
 import { getApiErrorMessage } from '@/api/client'
 import type { AiCustomizeResult } from '@/api/ai.api'
@@ -46,6 +46,9 @@ function tidySections(sections: ResumeSections): ResumeSections {
     certifications: sections.certifications.map((c) => c.trim()).filter(Boolean),
   }
 }
+
+/** How long after the last edit before the resume is saved. */
+const AUTOSAVE_DELAY_MS = 1200
 
 /**
  * The editor's sections, in the order the sidebar lists them.
@@ -171,6 +174,10 @@ export function ResumeEditorPage() {
   const [section, setSection] = useState<EditorSectionId>('personal')
   /** The AI tools drawer. Kept out of the form column so it adds no height. */
   const [aiOpen, setAiOpen] = useState(false)
+  /** The preview at full size, for reading rather than editing. */
+  const [previewOpen, setPreviewOpen] = useState(false)
+  /** Skips the autosave that simply loading the resume would otherwise cause. */
+  const hydrated = useRef(false)
   // The template gallery is a dialog so switching designs never loses your place.
   const [templateOpen, setTemplateOpen] = useState(false)
 
@@ -276,6 +283,27 @@ export function ResumeEditorPage() {
     setCustomization(null)
   }
 
+  /**
+   * Debounced autosave.
+   *
+   * The builder already saves as you go, and an editor that needs a button
+   * press to keep your work is the odd one out — so edits here persist the
+   * same way. `handleSave` is still the single write path; this only decides
+   * when to call it, and a manual "Save now" remains in the overflow menu for
+   * anyone who wants to force it.
+   */
+  useEffect(() => {
+    if (loading || !resume || !hydrated.current) {
+      // Loading the resume sets all of this state; that isn't an edit.
+      if (resume && !loading) hydrated.current = true
+      return
+    }
+    const timer = setTimeout(() => void handleSave(), AUTOSAVE_DELAY_MS)
+    return () => clearTimeout(timer)
+    // handleSave is recreated on every edit, which is what schedules the save.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, summary, skills, sections, template, loading, resume])
+
   const handleSave = async () => {
     if (!id || !previewResume) return
     setSaving(true)
@@ -323,60 +351,71 @@ export function ResumeEditorPage() {
     )
   }
 
-  /** Which sections have something in them — drives the sidebar's ticks. */
-  const completion: Record<EditorSectionId, boolean> = {
-    personal: Boolean(sections.personalInfo.fullName.trim() || sections.personalInfo.email.trim()),
-    summary: Boolean(summary.trim()),
-    experience: sections.experience.length > 0,
-    education: sections.education.length > 0,
-    skills: skills.length > 0,
-    projects: sections.projects.length > 0,
-    certifications: sections.certifications.some((c) => c.trim()),
-    // A template is always set, so this is informational rather than a to-do.
-    design: true,
-  }
-
   const current =
     EDITOR_SECTIONS.find((entry) => entry.id === section) ?? EDITOR_SECTIONS[0]
 
-  /* ── Left column: compact section navigation ── */
-  const sectionNav = (
-    <nav aria-label="Resume sections" className="lg:sticky lg:top-32">
-      {/* Horizontally scrollable chips on small screens, a list on desktop. */}
-      <ul className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:px-0 lg:pb-0">
-        {EDITOR_SECTIONS.map((entry) => {
+  /* ── Left column: section navigation ──
+     Grouped and deliberately plain. Numbered circles and completion ticks
+     belong to the creation wizard, where there is a sequence to finish; here
+     the user is editing a document that already exists, and marking sections
+     "incomplete" would invent a task they never asked for. */
+  const navGroup = (label: string, entries: EditorSectionDef[]) => (
+    <div>
+      <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-ink-subtle">
+        {label}
+      </p>
+      <ul className="space-y-0.5">
+        {entries.map((entry) => {
           const active = entry.id === section
-          const done = completion[entry.id]
           return (
-            <li key={entry.id} className="flex-shrink-0 lg:flex-shrink">
+            <li key={entry.id}>
               <button
                 type="button"
                 onClick={() => setSection(entry.id)}
                 aria-current={active ? 'true' : undefined}
                 className={
-                  'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ' +
+                  'w-full rounded-lg px-3 py-1.5 text-left text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ' +
                   (active
-                    ? 'bg-brand-50 text-brand-700'
-                    : 'text-ink-muted hover:bg-slate-100 hover:text-ink')
+                    ? 'bg-brand-50 font-semibold text-brand-700'
+                    : 'font-medium text-ink-muted hover:bg-slate-100 hover:text-ink')
                 }
               >
-                <span
-                  aria-hidden
-                  className={
-                    'flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold ' +
-                    (done
-                      ? 'bg-brand-600 text-white'
-                      : 'border border-slate-300 text-transparent')
-                  }
-                >
-                  ✓
-                </span>
-                <span className="truncate">{entry.label}</span>
+                {entry.label}
               </button>
             </li>
           )
         })}
       </ul>
+    </div>
+  )
+
+  const sectionNav = (
+    <nav aria-label="Resume sections" className="lg:sticky lg:top-32">
+      {/* A horizontal strip on small screens; the grouped list on desktop. */}
+      <ul className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] lg:hidden [&::-webkit-scrollbar]:hidden">
+        {EDITOR_SECTIONS.map((entry) => (
+          <li key={entry.id} className="flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => setSection(entry.id)}
+              aria-current={entry.id === section ? 'true' : undefined}
+              className={
+                'rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ' +
+                (entry.id === section
+                  ? 'bg-brand-600 text-white'
+                  : 'bg-slate-100 text-ink-muted hover:bg-slate-200')
+              }
+            >
+              {entry.label}
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      <div className="hidden space-y-5 lg:block">
+        {navGroup('Content', EDITOR_SECTIONS.filter((e) => e.id !== 'design'))}
+        {navGroup('Design', EDITOR_SECTIONS.filter((e) => e.id === 'design'))}
+      </div>
     </nav>
   )
 
@@ -389,11 +428,12 @@ export function ResumeEditorPage() {
         onChange={updateSections}
         only={[current.section]}
         alwaysOpen
+        flat
       />
     )
   } else if (current.id === 'summary') {
     sectionForm = (
-      <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <div>
         <Textarea
           label="Professional summary"
           value={summary}
@@ -406,7 +446,7 @@ export function ResumeEditorPage() {
     )
   } else if (current.id === 'skills') {
     sectionForm = (
-      <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <div>
         <SkillsInput value={skills} onChange={setSkills} />
       </div>
     )
@@ -432,21 +472,38 @@ export function ResumeEditorPage() {
   )
 
   /* ── Right column: the resume itself, the focus of the page ── */
+  const previewPaper = previewResume && (
+    <div className="shadow-card">
+      <ResumePreview resume={previewResume} template={template} />
+    </div>
+  )
+
   const preview = (
     <div className="lg:sticky lg:top-32">
       <div className="flex items-center justify-between gap-3 pb-2">
-        <h2 className="text-sm font-semibold text-ink">Preview</h2>
-        <span className="truncate text-xs text-ink-subtle">{activeTemplate.name}</span>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-subtle">
+          Live preview
+        </p>
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="truncate text-xs text-ink-muted">{activeTemplate.name}</span>
+          <button
+            type="button"
+            onClick={() => setPreviewOpen(true)}
+            aria-label="Expand the preview"
+            title="Expand"
+            className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-ink-subtle transition-colors hover:bg-slate-100 hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+          >
+            <svg viewBox="0 0 24 24" width={14} height={14} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+            </svg>
+          </button>
+        </div>
       </div>
-      {/* The paper sits on a tinted canvas so an sparse resume still reads as
-          a sheet of paper rather than a blank panel. */}
+      {/* The paper sits on a tinted canvas so a sparse resume still reads as a
+          sheet of paper rather than a blank panel. */}
       <div className="overflow-auto rounded-xl bg-slate-100/80 p-4 sm:p-6 lg:max-h-[calc(100vh-11rem)]">
-        <div className="mx-auto w-full" style={{ maxWidth: 780 }}>
-          {previewResume && (
-            <div className="shadow-card">
-              <ResumePreview resume={previewResume} template={template} />
-            </div>
-          )}
+        <div className="mx-auto w-full" style={{ maxWidth: 820 }}>
+          {previewPaper}
         </div>
       </div>
     </div>
@@ -454,32 +511,22 @@ export function ResumeEditorPage() {
 
   return (
     <Container className="py-6 sm:py-8">
-      {/* Toolbar — every editor action lives here and nowhere else. */}
-      <div className="sticky top-16 z-30 -mx-5 mb-5 border-b border-slate-200 bg-white/95 px-5 py-2.5 backdrop-blur-md sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          {/* Left: leaving the editor */}
-          <div className="flex min-w-0 items-center gap-3">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="whitespace-nowrap text-sm font-medium text-ink-muted transition-colors hover:text-brand-700"
-            >
-              ← Dashboard
-            </button>
-            {/* Resumes built with the step flow can return to it: the full
-                editor is a deliberate detour, not a one-way door. Both read
-                and write the same record, so nothing is lost either way. */}
-            {isManualResume(resume) && id && (
-              <button
-                onClick={() => navigate(`/resume/builder/${id}`)}
-                className="hidden whitespace-nowrap text-sm font-medium text-brand-700 transition-colors hover:text-brand-800 sm:block"
-              >
-                Step-by-step
-              </button>
-            )}
-          </div>
+      {/* Header — one quiet row. Everything that used to be a row of large
+          buttons now lives behind Tools or the overflow menu, leaving the two
+          actions people actually reach for. */}
+      <div className="sticky top-16 z-30 -mx-5 mb-6 border-b border-slate-200 bg-white/95 px-5 py-2.5 backdrop-blur-md sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="flex-shrink-0 whitespace-nowrap text-sm font-medium text-ink-muted transition-colors hover:text-brand-700"
+          >
+            ← Resumes
+          </button>
 
-          {/* Centre: the resume's name, edited in place */}
-          <div className="order-last w-full min-w-0 sm:order-none sm:w-auto sm:flex-1">
+          <span aria-hidden className="hidden h-4 w-px flex-shrink-0 bg-slate-200 sm:block" />
+
+          {/* The resume's name, edited in place. */}
+          <div className="min-w-0 flex-1">
             <label htmlFor="resume-title" className="sr-only">
               Resume name
             </label>
@@ -488,49 +535,132 @@ export function ResumeEditorPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Untitled Resume"
-              className="w-full truncate rounded-lg border border-transparent bg-transparent px-2 py-1 text-sm font-semibold text-ink transition-colors hover:border-slate-200 focus:border-brand-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 sm:text-center"
+              className="w-full max-w-xs truncate rounded-lg border border-transparent bg-transparent px-2 py-1 text-sm font-semibold text-ink transition-colors hover:border-slate-200 focus:border-brand-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             />
           </div>
 
-          {/* Right: the actions */}
-          <div className="ml-auto flex flex-wrap items-center gap-2">
-            {savedAt && (
-              <span className="hidden text-xs text-ink-subtle xl:inline" role="status">
-                Saved {savedAt}
+          <span className="hidden flex-shrink-0 text-xs text-ink-subtle sm:inline" role="status">
+            {saving ? 'Saving…' : savedAt ? `Autosaved ✓` : ''}
+          </span>
+
+          {/* Tools — every AI and analysis feature, one entry point. */}
+          <Menu
+            label="Resume tools"
+            className="relative z-40 flex-shrink-0"
+            triggerClassName="rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+            trigger={
+              <span className={buttonClasses({ variant: 'secondary', size: 'sm' })}>
+                <span aria-hidden>✨</span>
+                <span className="hidden sm:inline">Tools</span>
               </span>
+            }
+          >
+            {(close) => (
+              <>
+                <MenuItem
+                  onSelect={() => {
+                    close()
+                    setAiOpen(true)
+                  }}
+                >
+                  Ask AI / Improve resume
+                </MenuItem>
+                <MenuItem
+                  onSelect={() => {
+                    close()
+                    setAtsOpen(true)
+                  }}
+                >
+                  ATS checker
+                </MenuItem>
+                <MenuItem
+                  onSelect={() => {
+                    close()
+                    navigate(`/customize?resume=${id}`)
+                  }}
+                >
+                  Customize for a job
+                </MenuItem>
+                <MenuItem
+                  onSelect={() => {
+                    close()
+                    navigate(`/resume/new/interview?resume=${id}`)
+                  }}
+                >
+                  {resume?.creationMethod === 'ai-interview' ||
+                  (resume?.aiInterview?.messages?.length ?? 0) > 0
+                    ? 'Continue resume interview'
+                    : 'Resume interview'}
+                </MenuItem>
+                <MenuSeparator />
+                <MenuItem
+                  onSelect={() => {
+                    close()
+                    navigate(`/cover-letters/new?resume=${id}`)
+                  }}
+                >
+                  Write a cover letter
+                </MenuItem>
+              </>
             )}
-            <Button variant="secondary" size="sm" onClick={() => setTemplateOpen(true)}>
-              <span className="hidden sm:inline">Template: </span>
-              {activeTemplate.name}
-              <span aria-hidden className="text-ink-subtle">
-                ▾
+          </Menu>
+
+          <Button
+            size="sm"
+            className="flex-shrink-0"
+            onClick={handleExportPdf}
+            disabled={exporting || !previewResume}
+            aria-busy={exporting}
+          >
+            {exporting ? 'Preparing…' : 'Download'}
+            <span className="hidden sm:inline"> PDF</span>
+          </Button>
+
+          {/* Overflow — the things you need occasionally. */}
+          <Menu
+            label="More actions"
+            className="relative z-40 flex-shrink-0"
+            triggerClassName="rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+            trigger={
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-subtle transition-colors hover:bg-slate-100 hover:text-ink">
+                <svg viewBox="0 0 24 24" width={18} height={18} fill="currentColor" aria-hidden>
+                  <circle cx="12" cy="5" r="1.6" />
+                  <circle cx="12" cy="12" r="1.6" />
+                  <circle cx="12" cy="19" r="1.6" />
+                </svg>
               </span>
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setAtsOpen(true)}
-              /* Already open means a check is running or shown — no second trigger. */
-              disabled={atsOpen}
-            >
-              {atsOpen ? 'Checking…' : 'ATS score'}
-            </Button>
-            <Button variant="secondary" size="sm" onClick={() => setAiOpen(true)} disabled={!id}>
-              <span aria-hidden>✨</span> AI tools
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleExportPdf}
-              disabled={exporting || !previewResume}
-              aria-busy={exporting}
-            >
-              {exporting ? 'Preparing…' : 'Download PDF'}
-            </Button>
-            <Button size="sm" onClick={handleSave} disabled={saving} aria-busy={saving}>
-              {saving ? 'Saving…' : 'Save'}
-            </Button>
-          </div>
+            }
+          >
+            {(close) => (
+              <>
+                <MenuItem
+                  onSelect={() => {
+                    close()
+                    setTemplateOpen(true)
+                  }}
+                >
+                  Change template
+                </MenuItem>
+                <MenuItem
+                  onSelect={() => {
+                    close()
+                    setPreviewOpen(true)
+                  }}
+                >
+                  Expand preview
+                </MenuItem>
+                <MenuSeparator />
+                <MenuItem
+                  onSelect={() => {
+                    close()
+                    void handleSave()
+                  }}
+                >
+                  {saving ? 'Saving…' : 'Save now'}
+                </MenuItem>
+              </>
+            )}
+          </Menu>
         </div>
       </div>
 
@@ -609,7 +739,7 @@ export function ResumeEditorPage() {
           <span className="text-ink">
             Tailored for <span className="font-semibold">{customizedFor}</span>.
           </span>{' '}
-          <span className="text-ink-muted">Save changes to keep it.</span>
+          <span className="text-ink-muted">Your changes save automatically.</span>
         </div>
       )}
 
@@ -648,9 +778,14 @@ export function ResumeEditorPage() {
         open={templateOpen}
         onClose={() => setTemplateOpen(false)}
         title="Choose a template"
-        className="max-w-6xl max-h-[88vh] overflow-y-auto"
+        className="max-h-[88vh] w-[90vw] max-w-[1400px] overflow-y-auto"
       >
+        <p className="text-sm text-ink-muted">
+          Choose a design — your resume content stays the same.
+        </p>
         <TemplateGallery
+          className="mt-4"
+          stickyControls
           selectedId={template}
           onSelect={(id) => {
             setTemplate(id)
@@ -686,6 +821,18 @@ export function ResumeEditorPage() {
           />
         </Modal>
       )}
+
+      {/* The resume at full size — for reading it, not editing it. */}
+      <Modal
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        title={title || 'Resume preview'}
+        className="max-w-4xl max-h-[92vh] overflow-y-auto bg-slate-100"
+      >
+        <div className="mx-auto w-full" style={{ maxWidth: 820 }}>
+          {previewPaper}
+        </div>
+      </Modal>
 
       {/* Review a tailoring proposal before it touches the editor */}
       {previewResume && (

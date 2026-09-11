@@ -109,7 +109,7 @@ const STEPS: StepDef[] = [
     id: 'review',
     label: 'Review',
     title: 'Review and finish',
-    description: 'Everything looks right? Open the full editor to keep refining.',
+    description: 'Everything looks right? Save it and you will land back on your dashboard.',
   },
 ]
 
@@ -443,7 +443,7 @@ export function BuilderPage() {
                 Open full editor →
               </Button>
               <Button onClick={handleSaveAndExit} disabled={!hasContent}>
-                Save &amp; exit
+                Save resume
               </Button>
             </>
           )}
@@ -494,13 +494,13 @@ export function BuilderPage() {
       )}
 
       {/* Progress — completed steps are clickable. */}
-      <div className="mt-5 overflow-x-auto pb-1">
+      <div className="mt-5">
         <Stepper
+          variant="compact"
           steps={STEPS.map((s) => s.label)}
           current={step}
           maxReached={furthest}
           onSelect={goTo}
-          className="min-w-[640px]"
         />
       </div>
 
