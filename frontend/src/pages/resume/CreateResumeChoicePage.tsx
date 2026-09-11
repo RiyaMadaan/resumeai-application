@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
-import { Container } from '@/components/ui/Container'
 import { Button } from '@/components/ui/Button'
+import { ToolPage } from '@/components/layout/ToolPage'
 import { TemplateThumbnail } from '@/templates/TemplateThumbnail'
 import { getTemplate } from '@/templates/catalog'
 import { getPreferredTemplate } from '@/lib/preferredTemplate'
@@ -50,25 +50,16 @@ export function CreateResumeChoicePage() {
   const template = getTemplate(getPreferredTemplate())
 
   return (
-    <Container className="max-w-4xl py-10 sm:py-14">
-      <button
-        onClick={() => navigate('/dashboard')}
-        className="mb-6 text-sm font-medium text-ink-muted transition-colors hover:text-brand-700"
-      >
-        ← Back to dashboard
-      </button>
-
-      <h1 className="text-2xl font-bold tracking-tight text-ink">
-        How do you want to build your resume?
-      </h1>
-      <p className="mt-1 text-sm text-ink-muted">
-        Both routes produce an ordinary resume — you can switch templates, run an ATS check or
-        tailor it to a job either way.
-      </p>
+    <ToolPage
+      width="lg"
+      back={{ to: '/dashboard', label: 'Back to resumes' }}
+      title="How do you want to build your resume?"
+      description="Both routes produce an ordinary resume — you can switch templates, run an ATS check or tailor it to a job either way."
+    >
 
       {/* The starting template. Changing it here is optional — every resume can
           switch template later from its editor. */}
-      <div className="mt-6 flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3.5">
           <div className="w-14 flex-shrink-0 overflow-hidden rounded-md ring-1 ring-slate-200">
             <TemplateThumbnail spec={template} />
@@ -88,7 +79,7 @@ export function CreateResumeChoicePage() {
 
       {/* Manual first: it is the one route where nothing is written for you,
           and the one that reopens in its own builder later. */}
-      <section className="mt-8" aria-labelledby="manual-heading">
+      <section className="mt-7" aria-labelledby="manual-heading">
         <h2 id="manual-heading" className="flex items-center gap-2 text-sm font-semibold text-ink">
           <span aria-hidden>📝</span> Build manually
         </h2>
@@ -138,6 +129,6 @@ export function CreateResumeChoicePage() {
         />
         </div>
       </section>
-    </Container>
+    </ToolPage>
   )
 }

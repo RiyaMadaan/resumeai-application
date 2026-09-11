@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useRawReturnTo, useReturnTo, withReturnTo } from '@/lib/returnTo'
-import { Container } from '@/components/ui/Container'
 import { Button } from '@/components/ui/Button'
 import { Input, Textarea } from '@/components/ui/Input'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { ToolPage, Panel, PanelHeader } from '@/components/layout/ToolPage'
+import { SparkleIcon } from '@/components/ui/icons'
 import { resumesApi } from '@/api/resumes.api'
 import { coverLettersApi } from '@/api/coverLetters.api'
 import { getApiErrorMessage } from '@/api/client'
@@ -90,27 +91,19 @@ export function NewCoverLetterPage() {
   if (resumes === null && !error) return <LoadingState label="Loading your resumes…" fullscreen />
 
   return (
-    <Container className="max-w-3xl py-8 sm:py-12">
-      <button
-        onClick={() => navigate(back.to)}
-        className="mb-6 text-sm font-medium text-ink-muted transition-colors hover:text-brand-700"
-      >
-        ← {back.label}
-      </button>
-
-      <h1 className="text-2xl font-bold tracking-tight text-ink">New cover letter</h1>
-      <p className="mt-1 text-sm text-ink-muted">
-        We'll write it from your resume — only using experience you actually have.
-      </p>
-
+    <ToolPage
+      back={back}
+      title="Cover letter"
+      description="Create a professional cover letter tailored to your resume. We only use experience you actually have."
+    >
       {error && (
-        <p role="alert" className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
+        <p role="alert" className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
           {error}
         </p>
       )}
 
       {resumes && resumes.length === 0 ? (
-        <div className="mt-8">
+        <div>
           <EmptyState
             title="You'll need a resume first"
             description="A cover letter is written from your resume, so create one and come back."
@@ -118,14 +111,14 @@ export function NewCoverLetterPage() {
           />
         </div>
       ) : (
-        <div className="mt-8 space-y-5">
+        <div className="space-y-4">
           {/* Resume */}
-          <div className="rounded-xl border border-slate-200 bg-white p-5">
-            <h2 className="text-sm font-semibold text-ink">Which resume?</h2>
-            <p className="mt-0.5 text-xs text-ink-muted">
-              Its content is the only thing the letter can draw on.
-            </p>
-            <div className="mt-3 space-y-2">
+          <Panel>
+            <PanelHeader
+              title="Which resume?"
+              description="Its content is the only thing the letter can draw on."
+            />
+            <div className="space-y-2">
               {(resumes ?? []).map((resume) => (
                 <label
                   key={resume._id}
@@ -155,10 +148,10 @@ export function NewCoverLetterPage() {
                 </label>
               ))}
             </div>
-          </div>
+          </Panel>
 
           {/* Target */}
-          <div className="grid gap-4 sm:grid-cols-2">
+          <Panel className="grid gap-4 sm:grid-cols-2">
             <Input
               label="Company"
               value={company}
@@ -173,10 +166,10 @@ export function NewCoverLetterPage() {
               placeholder="Senior Product Engineer"
               hint="Optional."
             />
-          </div>
+          </Panel>
 
           {/* Job description */}
-          <div>
+          <Panel>
             <Textarea
               label="Job description"
               value={jobDescription}
@@ -189,18 +182,18 @@ export function NewCoverLetterPage() {
                   : 'The more complete this is, the better the letter matches.'
               }
             />
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={handleGenerate} disabled={!canGenerate} aria-busy={generating}>
-              {generating ? 'Writing your letter…' : 'Generate cover letter'}
-            </Button>
-            <Button variant="ghost" onClick={() => navigate(back.to)}>
-              Cancel
-            </Button>
-          </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <Button onClick={handleGenerate} disabled={!canGenerate} aria-busy={generating}>
+                <SparkleIcon width={16} height={16} />
+                {generating ? 'Writing your letter…' : 'Generate cover letter'}
+              </Button>
+              <Button variant="ghost" onClick={() => navigate(back.to)}>
+                Cancel
+              </Button>
+            </div>
+          </Panel>
         </div>
       )}
-    </Container>
+    </ToolPage>
   )
 }

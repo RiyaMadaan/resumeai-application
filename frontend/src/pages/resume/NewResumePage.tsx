@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Container } from '@/components/ui/Container'
 import { Button } from '@/components/ui/Button'
+import { ToolPage } from '@/components/layout/ToolPage'
 import { Input } from '@/components/ui/Input'
 import { Spinner } from '@/components/ui/LoadingState'
 import { aiApi } from '@/api/ai.api'
@@ -113,20 +113,11 @@ export function NewResumePage() {
   }
 
   return (
-    <Container className="max-w-2xl py-10 sm:py-14">
-      <button
-        onClick={() => navigate('/resume/new')}
-        className="mb-6 text-sm font-medium text-ink-muted transition-colors hover:text-brand-700"
-        disabled={submitting}
-      >
-        ← Back
-      </button>
-
-      <h1 className="text-2xl font-bold tracking-tight text-ink">Tell us about your career</h1>
-      <p className="mt-1 text-sm text-ink-muted">
-        Write it however you like. We'll sort it into the right sections — and never add anything
-        you didn't say.
-      </p>
+    <ToolPage
+      back={{ to: '/resume/new', label: 'Back' }}
+      title="Tell us about your career"
+      description="Write it however you like. We'll sort it into the right sections — and never add anything you didn't say."
+    >
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-5">
         <Input
@@ -203,6 +194,6 @@ export function NewResumePage() {
           </Button>
         </div>
       </form>
-    </Container>
+    </ToolPage>
   )
 }

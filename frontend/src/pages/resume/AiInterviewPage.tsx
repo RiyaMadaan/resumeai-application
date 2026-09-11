@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { ToolPage } from '@/components/layout/ToolPage'
+import { useReturnTo } from '@/lib/returnTo'
 import { Container } from '@/components/ui/Container'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -106,6 +108,11 @@ export function AiInterviewPage() {
   const [searchParams] = useSearchParams()
   /** When present, the interview continues this resume instead of creating one. */
   const resumeId = searchParams.get('resume') ?? ''
+  // Opened from a resume, Back belongs to that resume.
+  const back = useReturnTo({
+    to: resumeId ? `/resume/${resumeId}` : '/resume/new',
+    label: resumeId ? 'Back to resume' : 'Back',
+  })
 
   const [loadingResume, setLoadingResume] = useState(Boolean(resumeId))
   const [stage, setStage] = useState<'chat' | 'review'>('chat')
@@ -368,28 +375,20 @@ export function AiInterviewPage() {
 
   /* ── Chat ── */
   return (
-    <Container className="max-w-3xl py-6 sm:py-10">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-2 text-xl font-bold tracking-tight text-ink">
-            <span aria-hidden className="text-brand-500">
-              ✦
-            </span>
-            {resumeId ? 'Continue AI Interview' : 'AI Resume Interview'}
-          </h1>
-          <p className="mt-0.5 text-sm text-ink-muted">
-            Answer in your own words — I'll turn it into a resume.
-          </p>
-        </div>
+    <ToolPage
+      back={back}
+      title={resumeId ? 'Continue resume interview' : 'Resume interview'}
+      description="Practice real interview questions and answer in your own words — I'll turn it into a resume."
+      aside={
         <Button variant="ghost" size="sm" onClick={discard} disabled={thinking || creating}>
           Cancel
         </Button>
-      </div>
-
+      }
+    >
       {restored && (
         <p
           role="status"
-          className="mt-4 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-ink-muted"
+          className="mb-4 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-ink-muted"
         >
           {resumeId
             ? 'Picked up where you left off — I already have what is on your resume.'
@@ -397,7 +396,7 @@ export function AiInterviewPage() {
         </p>
       )}
 
-      <div className="mt-5 rounded-xl border border-slate-200 bg-white">
+      <div className="rounded-xl border border-slate-200 bg-white">
         {/* Intro */}
         <div className="border-b border-slate-100 bg-brand-gradient-soft px-4 py-3">
           <p className="text-sm leading-relaxed text-ink-muted">{INTRO}</p>
@@ -487,7 +486,7 @@ export function AiInterviewPage() {
           </div>
         </div>
       )}
-    </Container>
+    </ToolPage>
   )
 }
 

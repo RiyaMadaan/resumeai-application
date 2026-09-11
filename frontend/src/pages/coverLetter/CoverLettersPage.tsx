@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Container } from '@/components/ui/Container'
 import { Button, buttonClasses } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { PageHeader } from '@/components/layout/ToolPage'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { Menu, MenuItem } from '@/components/ui/Menu'
 import { PlusIcon, WandIcon } from '@/components/ui/icons'
@@ -66,18 +67,16 @@ export function CoverLettersPage() {
 
   return (
     <Container className="py-8 sm:py-12">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-ink">Cover letters</h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            Written from your resume and tailored to a specific job.
-          </p>
-        </div>
-        <Button onClick={() => navigate('/cover-letters/new')} className="flex-shrink-0">
-          <PlusIcon width={16} height={16} />
-          New cover letter
-        </Button>
-      </div>
+      <PageHeader
+        title="Cover letters"
+        description="Written from your resume and tailored to a specific job."
+        actions={
+          <Button onClick={() => navigate('/cover-letters/new')}>
+            <PlusIcon width={16} height={16} />
+            New cover letter
+          </Button>
+        }
+      />
 
       {error && (
         <p role="alert" className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700">

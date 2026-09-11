@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Container } from '@/components/ui/Container'
 import { Button } from '@/components/ui/Button'
 import { TemplateGallery } from '@/components/resume/TemplateGallery'
+import { PageHeader } from '@/components/layout/ToolPage'
 import { TEMPLATES, getTemplate } from '@/templates/catalog'
 import { getPreferredTemplate, setPreferredTemplate } from '@/lib/preferredTemplate'
 
@@ -26,25 +27,13 @@ export function TemplatesPage() {
 
   return (
     <Container className="py-8 sm:py-12">
-      <button
-        onClick={() => navigate('/dashboard')}
-        className="mb-6 text-sm font-medium text-ink-muted transition-colors hover:text-brand-700"
-      >
-        ← Back to dashboard
-      </button>
-
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-ink">Templates</h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            {TEMPLATES.length} designs, all using your own content. Pick one to start with — you can
-            change it at any time while editing.
-          </p>
-        </div>
-        <Button onClick={() => navigate('/resume/new')} className="flex-shrink-0">
-          Continue with {spec.name}
-        </Button>
-      </div>
+      <PageHeader
+        title="Templates"
+        description={`${TEMPLATES.length} designs, all using your own content. Pick one to start with — you can change it at any time while editing.`}
+        actions={
+          <Button onClick={() => navigate('/resume/new')}>Continue with {spec.name}</Button>
+        }
+      />
 
       <TemplateGallery selectedId={selected} onSelect={handleSelect} className="mt-8" />
     </Container>

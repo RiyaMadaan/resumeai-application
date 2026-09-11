@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useReturnTo } from '@/lib/returnTo'
-import { Container } from '@/components/ui/Container'
+import { ToolPage } from '@/components/layout/ToolPage'
 import { Button } from '@/components/ui/Button'
 import { Input, Textarea } from '@/components/ui/Input'
 import { LoadingState } from '@/components/ui/LoadingState'
@@ -216,14 +216,11 @@ export function CoverLetterEditorPage() {
 
   if (error && !letter) {
     return (
-      <Container className="py-16">
+      <ToolPage title="Cover letter" back={back}>
         <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
           {error}
         </div>
-        <Button variant="secondary" className="mt-6" onClick={() => navigate(back.to)}>
-          ← {back.label}
-        </Button>
-      </Container>
+      </ToolPage>
     )
   }
 
@@ -363,27 +360,25 @@ export function CoverLetterEditorPage() {
   )
 
   return (
-    <Container className="py-6 sm:py-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <button
-          onClick={() => navigate(back.to)}
-          className="self-start text-sm font-medium text-ink-muted transition-colors hover:text-brand-700"
-        >
-          ← {back.label}
-        </button>
+    <ToolPage
+      width="xl"
+      back={back}
+      title={title.trim() || 'Cover letter'}
+      description="Edit it by hand or refine it with AI — your changes save automatically."
+      aside={
         <span className="text-xs text-ink-subtle" role="status">
           {saving ? 'Saving…' : savedAt ? `Saved at ${savedAt}` : ''}
         </span>
-      </div>
-
+      }
+    >
       {error && letter && (
-        <p role="alert" className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
+        <p role="alert" className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
           {error}
         </p>
       )}
 
       {/* Mobile: the two panes become tabs. */}
-      <div className="mt-5 flex gap-1 rounded-xl border border-slate-200 bg-white p-1 lg:hidden">
+      <div className="mb-5 flex gap-1 rounded-xl border border-slate-200 bg-white p-1 lg:hidden">
         {(['edit', 'preview'] as const).map((tab) => (
           <button
             key={tab}
@@ -400,12 +395,12 @@ export function CoverLetterEditorPage() {
         ))}
       </div>
 
-      <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,440px)_minmax(0,1fr)] lg:items-start">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,440px)_minmax(0,1fr)] lg:items-start">
         <div className={mobileTab === 'edit' ? '' : 'hidden lg:block'}>{editor}</div>
         <div className={mobileTab === 'preview' ? '' : 'hidden lg:block'}>
           <div className="lg:sticky lg:top-24">{preview}</div>
         </div>
       </div>
-    </Container>
+    </ToolPage>
   )
 }

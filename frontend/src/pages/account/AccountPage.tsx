@@ -93,13 +93,6 @@ export function AccountPage() {
 
   return (
     <Container className="max-w-4xl py-8 sm:py-12">
-      <button
-        onClick={() => navigate('/dashboard')}
-        className="mb-6 text-sm font-medium text-ink-muted transition-colors hover:text-brand-700"
-      >
-        ← Back to dashboard
-      </button>
-
       {/* Identity card */}
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft">
         <div className="h-20 bg-brand-gradient sm:h-24" aria-hidden />

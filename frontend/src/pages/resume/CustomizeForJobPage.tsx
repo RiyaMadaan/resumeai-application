@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useReturnTo } from '@/lib/returnTo'
 import { getTemplate } from '@/templates/catalog'
-import { Container } from '@/components/ui/Container'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { LoadingState, Spinner } from '@/components/ui/LoadingState'
 import { Stepper } from '@/components/ui/Stepper'
+import { ToolPage, Panel, PanelHeader } from '@/components/layout/ToolPage'
+import { SparkleIcon } from '@/components/ui/icons'
 import { aiApi } from '@/api/ai.api'
 import { resumesApi } from '@/api/resumes.api'
 import { getApiErrorMessage } from '@/api/client'
@@ -132,25 +133,17 @@ export function CustomizeForJobPage() {
   if (loading) return <LoadingState label="Loading your resumes…" fullscreen />
 
   return (
-    <Container className="max-w-3xl py-8 sm:py-12">
-      <button
-        onClick={() => navigate(back.to)}
-        className="mb-6 text-sm font-medium text-ink-muted transition-colors hover:text-brand-700"
-      >
-        ← {back.label}
-      </button>
-
-      <h1 className="text-2xl font-bold tracking-tight text-ink">Tailor for a job</h1>
-      <p className="mt-1 text-sm text-ink-muted">
-        ResumeAI rewrites what you already have to match the role. It never invents experience.
-      </p>
-
+    <ToolPage
+      back={back}
+      title="Customize for a job"
+      description="ResumeAI rewrites what you already have to match the role. It never invents experience."
+    >
       {loadError ? (
-        <div className="mt-8 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+        <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
           {loadError}
         </div>
       ) : resumes.length === 0 ? (
-        <div className="mt-8">
+        <div>
           <EmptyState
             title="No resumes to tailor yet"
             description="Create a resume first, then come back and tailor it to any job posting."
@@ -163,16 +156,17 @@ export function CustomizeForJobPage() {
         </div>
       ) : (
         <>
-          <Stepper steps={STEPS} current={step} className="mt-8" />
+          <Stepper variant="compact" steps={STEPS} current={step} />
 
-          <div className="mt-8">
+          <div className="mt-6">
             {/* ── Step 1: choose a resume ── */}
             {step === 0 && (
-              <div>
-                <h2 className="text-sm font-semibold text-ink">
-                  Which resume do you want to tailor?
-                </h2>
-                <div className="mt-3 space-y-2">
+              <Panel>
+                <PanelHeader
+                  title="Which resume do you want to tailor?"
+                  description="Its content is the only thing the tailoring can draw on."
+                />
+                <div className="space-y-2">
                   {resumes.map((resume) => {
                     const selected = resume._id === selectedId
                     return (
@@ -207,20 +201,20 @@ export function CustomizeForJobPage() {
                   })}
                 </div>
 
-                <div className="mt-6 flex gap-3">
+                <div className="mt-5 flex gap-2">
                   <Button onClick={() => setStep(1)} disabled={!selectedId}>
                     Continue
                   </Button>
-                  <Button variant="secondary" onClick={() => navigate(back.to)}>
+                  <Button variant="ghost" onClick={() => navigate(back.to)}>
                     Cancel
                   </Button>
                 </div>
-              </div>
+              </Panel>
             )}
 
             {/* ── Step 2: the posting ── */}
             {step === 1 && (
-              <div>
+              <Panel>
                 <label htmlFor="job-description" className="text-sm font-semibold text-ink">
                   Paste the job description
                 </label>
@@ -265,15 +259,16 @@ export function CustomizeForJobPage() {
                   </p>
                 )}
 
-                <div className="mt-6 flex gap-3">
+                <div className="mt-5 flex flex-wrap items-center gap-2">
                   <Button onClick={handleSubmit} disabled={trimmedLength === 0}>
-                    Tailor resume
+                    <SparkleIcon width={16} height={16} />
+                    Customize resume
                   </Button>
-                  <Button variant="secondary" onClick={() => setStep(0)}>
+                  <Button variant="ghost" onClick={() => setStep(0)}>
                     Back
                   </Button>
                 </div>
-              </div>
+              </Panel>
             )}
 
             {/* ── Step 3: the AI run ── */}
@@ -293,6 +288,6 @@ export function CustomizeForJobPage() {
           </div>
         </>
       )}
-    </Container>
+    </ToolPage>
   )
 }

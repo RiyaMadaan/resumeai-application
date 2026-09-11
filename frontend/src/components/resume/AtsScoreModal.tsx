@@ -76,6 +76,50 @@ function ScoreRing({ score }: { score: number }) {
   )
 }
 
+/**
+ * SignalCard — strengths or issues, as the reference presents them: a short
+ * titled card with a tinted marker per line. Renders whatever the analysis
+ * returned; it derives nothing.
+ */
+function SignalCard({
+  title,
+  items,
+  empty,
+  tone,
+}: {
+  title: string
+  items: string[]
+  empty: string
+  tone: 'positive' | 'warning'
+}) {
+  const positive = tone === 'positive'
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <h3 className="text-sm font-semibold text-ink">{title}</h3>
+      {items.length === 0 ? (
+        <p className="mt-2 text-xs text-ink-subtle">{empty}</p>
+      ) : (
+        <ul className="mt-2.5 space-y-2">
+          {items.map((item, i) => (
+            <li key={i} className="flex gap-2.5 text-xs leading-relaxed text-ink-muted">
+              <span
+                aria-hidden
+                className={
+                  'mt-[3px] flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white ' +
+                  (positive ? 'bg-emerald-600' : 'bg-amber-500')
+                }
+              >
+                {positive ? '✓' : '!'}
+              </span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 /** One category row with a labelled progress bar. */
 function CategoryRow({ label, hint, score }: { label: string; hint: string; score: number }) {
   const tone = scoreTone(score)
@@ -329,6 +373,35 @@ export function AtsScoreModal({
                 </div>
               </div>
 
+              {/* What went well and what didn't — the two things people look
+                  for after the number itself. */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <SignalCard
+                  title="Strengths"
+                  items={result.strengths}
+                  empty="No standout strengths found yet."
+                  tone="positive"
+                />
+                <SignalCard
+                  title="Issues"
+                  items={result.issues}
+                  empty="No blocking issues found."
+                  tone="warning"
+                />
+              </div>
+
+              <details className="group rounded-xl border border-slate-200 bg-white">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-ink">
+                  Detailed report
+                  <span
+                    aria-hidden
+                    className="text-xs font-medium text-brand-700 transition-transform group-open:rotate-180"
+                  >
+                    ▾
+                  </span>
+                </summary>
+                <div className="space-y-6 border-t border-slate-100 px-4 py-4">
+
               {/* Category breakdown */}
               <Block title="Score breakdown">
                 <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
@@ -365,6 +438,8 @@ export function AtsScoreModal({
                 </Block>
               )}
 
+              {/* Strengths and issues already lead the report above, so only
+                  the recommendations remain here. */}
               <div className="space-y-2">
                 <FeedbackList
                   icon="💡"
@@ -372,18 +447,6 @@ export function AtsScoreModal({
                   items={result.recommendations}
                   markerClassName="text-ink-muted marker:text-brand-400"
                   defaultOpen
-                />
-                <FeedbackList
-                  icon="⚠️"
-                  title="Issues to improve"
-                  items={result.issues}
-                  markerClassName="text-ink-muted marker:text-amber-500"
-                />
-                <FeedbackList
-                  icon="✅"
-                  title="Strengths"
-                  items={result.strengths}
-                  markerClassName="text-ink-muted marker:text-emerald-500"
                 />
               </div>
 
@@ -406,6 +469,8 @@ export function AtsScoreModal({
                   </div>
                 </Block>
               )}
+                </div>
+              </details>
 
               <p className="text-[11px] text-ink-subtle">
                 This is an evaluation only — your resume hasn't been changed.

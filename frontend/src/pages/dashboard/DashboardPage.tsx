@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input'
 import { ResumeCardSkeleton } from '@/components/ui/Skeleton'
 import { ResumeCard } from '@/components/resume/ResumeCard'
 import { PlusIcon } from '@/components/ui/icons'
+import { PageHeader } from '@/components/layout/ToolPage'
 import { getTemplate } from '@/templates/catalog'
 import { AtsScoreModal } from '@/components/resume/AtsScoreModal'
 import { resumesApi } from '@/api/resumes.api'
@@ -144,28 +145,23 @@ export function DashboardPage() {
   return (
     <Container className="py-8 sm:py-12">
       {/* Header — a greeting, then the two things you come here to do. */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight text-ink">
-            {greeting}
-            {user ? `, ${user.name.split(' ')[0]}` : ''}
-          </h1>
-          <p className="mt-1 max-w-xl text-sm text-ink-muted">
-            Create, edit and tailor your resumes to land your dream job.
-          </p>
-        </div>
-        <div className="flex flex-shrink-0 flex-wrap gap-2">
-          <Button onClick={() => navigate('/resume/new')}>
-            <PlusIcon width={16} height={16} />
-            New resume
-          </Button>
-          {resumes.length > 0 && (
-            <Button variant="secondary" onClick={() => navigate('/customize')}>
-              Tailor for a job
+      <PageHeader
+        title={`${greeting}${user ? `, ${user.name.split(' ')[0]}` : ''}`}
+        description="Create, edit and tailor your resumes to land your dream job."
+        actions={
+          <>
+            <Button onClick={() => navigate('/resume/new')}>
+              <PlusIcon width={16} height={16} />
+              New resume
             </Button>
-          )}
-        </div>
-      </div>
+            {resumes.length > 0 && (
+              <Button variant="secondary" onClick={() => navigate('/customize')}>
+                Tailor for a job
+              </Button>
+            )}
+          </>
+        }
+      />
 
       {/* Search — only earns its place once there are enough resumes to sift. */}
       {resumes.length > 3 && (
