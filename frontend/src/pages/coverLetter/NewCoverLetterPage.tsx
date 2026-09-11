@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useRawReturnTo, useReturnTo, withReturnTo } from '@/lib/returnTo'
 import { Container } from '@/components/ui/Container'
 import { Button } from '@/components/ui/Button'
 import { Input, Textarea } from '@/components/ui/Input'
@@ -24,6 +25,9 @@ const MIN_JOB_DESCRIPTION_LENGTH = 40
 export function NewCoverLetterPage() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
+  const back = useReturnTo({ to: '/cover-letters', label: 'Back to cover letters' })
+  // Passed to the letter we create, so its own Back leads to the same place.
+  const origin = useRawReturnTo()
 
   const [resumes, setResumes] = useState<Resume[] | null>(null)
   const [resumeId, setResumeId] = useState(params.get('resume') ?? '')
@@ -69,11 +73,11 @@ export function NewCoverLetterPage() {
       })
       try {
         await coverLettersApi.generate(letter._id, {})
-        navigate(`/cover-letters/${letter._id}`)
+        navigate(withReturnTo(`/cover-letters/${letter._id}`, origin))
       } catch (genErr) {
         // The record exists with the user's inputs — send them to it so they
         // can retry without re-entering anything.
-        navigate(`/cover-letters/${letter._id}`, {
+        navigate(withReturnTo(`/cover-letters/${letter._id}`, origin), {
           state: { generationError: getApiErrorMessage(genErr, 'Could not write your cover letter') },
         })
       }
@@ -88,10 +92,10 @@ export function NewCoverLetterPage() {
   return (
     <Container className="max-w-3xl py-8 sm:py-12">
       <button
-        onClick={() => navigate('/cover-letters')}
+        onClick={() => navigate(back.to)}
         className="mb-6 text-sm font-medium text-ink-muted transition-colors hover:text-brand-700"
       >
-        ← Back to cover letters
+        ← {back.label}
       </button>
 
       <h1 className="text-2xl font-bold tracking-tight text-ink">New cover letter</h1>
@@ -191,7 +195,7 @@ export function NewCoverLetterPage() {
             <Button onClick={handleGenerate} disabled={!canGenerate} aria-busy={generating}>
               {generating ? 'Writing your letter…' : 'Generate cover letter'}
             </Button>
-            <Button variant="ghost" onClick={() => navigate('/cover-letters')}>
+            <Button variant="ghost" onClick={() => navigate(back.to)}>
               Cancel
             </Button>
           </div>

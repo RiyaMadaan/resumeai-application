@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useReturnTo } from '@/lib/returnTo'
 import { getTemplate } from '@/templates/catalog'
 import { Container } from '@/components/ui/Container'
 import { Button } from '@/components/ui/Button'
@@ -41,6 +42,9 @@ function formatUpdated(iso: string): string {
 export function CustomizeForJobPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  // Opened from a resume, Back belongs to that resume; opened from the
+  // dashboard, it belongs to the dashboard.
+  const back = useReturnTo({ to: '/dashboard', label: 'Back to resumes' })
 
   const [resumes, setResumes] = useState<Resume[]>([])
   const [loading, setLoading] = useState(true)
@@ -130,10 +134,10 @@ export function CustomizeForJobPage() {
   return (
     <Container className="max-w-3xl py-8 sm:py-12">
       <button
-        onClick={() => navigate('/dashboard')}
+        onClick={() => navigate(back.to)}
         className="mb-6 text-sm font-medium text-ink-muted transition-colors hover:text-brand-700"
       >
-        ← Back to dashboard
+        ← {back.label}
       </button>
 
       <h1 className="text-2xl font-bold tracking-tight text-ink">Tailor for a job</h1>
@@ -207,7 +211,7 @@ export function CustomizeForJobPage() {
                   <Button onClick={() => setStep(1)} disabled={!selectedId}>
                     Continue
                   </Button>
-                  <Button variant="secondary" onClick={() => navigate('/dashboard')}>
+                  <Button variant="secondary" onClick={() => navigate(back.to)}>
                     Cancel
                   </Button>
                 </div>

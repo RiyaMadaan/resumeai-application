@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useReturnTo } from '@/lib/returnTo'
 import { Container } from '@/components/ui/Container'
 import { Button } from '@/components/ui/Button'
 import { Input, Textarea } from '@/components/ui/Input'
@@ -41,6 +42,9 @@ export function CoverLetterEditorPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const location = useLocation()
+  // A letter written from a resume leads back to that resume; one opened from
+  // the list leads back to the list.
+  const back = useReturnTo({ to: '/cover-letters', label: 'Back to cover letters' })
 
   const [letter, setLetter] = useState<CoverLetter | null>(null)
   const [resume, setResume] = useState<Resume | null>(null)
@@ -216,8 +220,8 @@ export function CoverLetterEditorPage() {
         <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
           {error}
         </div>
-        <Button variant="secondary" className="mt-6" onClick={() => navigate('/cover-letters')}>
-          ← Back to cover letters
+        <Button variant="secondary" className="mt-6" onClick={() => navigate(back.to)}>
+          ← {back.label}
         </Button>
       </Container>
     )
@@ -362,10 +366,10 @@ export function CoverLetterEditorPage() {
     <Container className="py-6 sm:py-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
-          onClick={() => navigate('/cover-letters')}
+          onClick={() => navigate(back.to)}
           className="self-start text-sm font-medium text-ink-muted transition-colors hover:text-brand-700"
         >
-          ← Back to cover letters
+          ← {back.label}
         </button>
         <span className="text-xs text-ink-subtle" role="status">
           {saving ? 'Saving…' : savedAt ? `Saved at ${savedAt}` : ''}

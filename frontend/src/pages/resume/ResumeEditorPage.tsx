@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Container } from '@/components/ui/Container'
-import { Button, buttonClasses } from '@/components/ui/Button'
+import { Button } from '@/components/ui/Button'
 import { Textarea } from '@/components/ui/Input'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { ResumePreview } from '@/components/resume/ResumePreview'
@@ -20,6 +20,7 @@ import { SkillsInput } from '@/components/resume/SkillsInput'
 import { TemplateGallery } from '@/components/resume/TemplateGallery'
 import { Modal } from '@/components/ui/Modal'
 import { Menu, MenuItem, MenuSeparator } from '@/components/ui/Menu'
+import { withReturnTo } from '@/lib/returnTo'
 import { getTemplate } from '@/templates/catalog'
 import { resumesApi, type ImportSummary } from '@/api/resumes.api'
 import { getApiErrorMessage } from '@/api/client'
@@ -354,6 +355,39 @@ export function ResumeEditorPage() {
   const current =
     EDITOR_SECTIONS.find((entry) => entry.id === section) ?? EDITOR_SECTIONS[0]
 
+  /**
+   * The AI tools, as sidebar entries.
+   *
+   * Two of them are panels that open over the editor; three are their own
+   * pages. The pages are told where they were opened from, so their Back
+   * returns here rather than to a global list — and because that travels in
+   * the URL, it survives a refresh.
+   */
+  const here = `/resume/${id}`
+  const aiTools: { id: string; label: string; run: () => void }[] = [
+    { id: 'improve', label: 'Improve with AI', run: () => setAiOpen(true) },
+    {
+      id: 'customize',
+      label: 'Customize for a job',
+      run: () => navigate(withReturnTo(`/customize?resume=${id}`, here)),
+    },
+    {
+      id: 'interview',
+      label:
+        resume?.creationMethod === 'ai-interview' ||
+        (resume?.aiInterview?.messages?.length ?? 0) > 0
+          ? 'Continue interview'
+          : 'Resume interview',
+      run: () => navigate(withReturnTo(`/resume/new/interview?resume=${id}`, here)),
+    },
+    { id: 'ats', label: 'ATS checker', run: () => setAtsOpen(true) },
+    {
+      id: 'cover',
+      label: 'Cover letter',
+      run: () => navigate(withReturnTo(`/cover-letters/new?resume=${id}`, here)),
+    },
+  ]
+
   /* ── Left column: section navigation ──
      Grouped and deliberately plain. Numbered circles and completion ticks
      belong to the creation wizard, where there is a sequence to finish; here
@@ -412,9 +446,48 @@ export function ResumeEditorPage() {
         ))}
       </ul>
 
+      {/* Small screens: the same tools, as a second chip row. */}
+      <ul className="-mx-1 mt-2 flex gap-1 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] lg:hidden [&::-webkit-scrollbar]:hidden">
+        {aiTools.map((tool) => (
+          <li key={tool.id} className="flex-shrink-0">
+            <button
+              type="button"
+              onClick={tool.run}
+              disabled={!id}
+              className="rounded-full border border-slate-200 px-3.5 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:border-brand-300 hover:text-brand-700 disabled:opacity-50"
+            >
+              {tool.label}
+            </button>
+          </li>
+        ))}
+      </ul>
+
       <div className="hidden space-y-5 lg:block">
         {navGroup('Content', EDITOR_SECTIONS.filter((e) => e.id !== 'design'))}
         {navGroup('Design', EDITOR_SECTIONS.filter((e) => e.id === 'design'))}
+
+        {/* AI tools. Deliberately quieter than the sections above — they act
+            on the resume rather than being part of it, and none of them is
+            where the work normally happens. */}
+        <div>
+          <p className="flex items-center gap-1.5 px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-ink-subtle">
+            <span aria-hidden>✨</span> AI tools
+          </p>
+          <ul className="space-y-0.5">
+            {aiTools.map((tool) => (
+              <li key={tool.id}>
+                <button
+                  type="button"
+                  onClick={tool.run}
+                  disabled={!id}
+                  className="w-full rounded-lg px-3 py-1.5 text-left text-sm text-ink-muted transition-colors hover:bg-slate-100 hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:opacity-50"
+                >
+                  {tool.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </nav>
   )
@@ -511,9 +584,9 @@ export function ResumeEditorPage() {
 
   return (
     <Container className="py-6 sm:py-8">
-      {/* Header — one quiet row. Everything that used to be a row of large
-          buttons now lives behind Tools or the overflow menu, leaving the two
-          actions people actually reach for. */}
+      {/* Header — one quiet row. The AI tools moved into the sidebar, where
+          they sit beside the sections they act on rather than in a dropdown
+          floating over the middle of the page. */}
       <div className="sticky top-16 z-30 -mx-5 mb-6 border-b border-slate-200 bg-white/95 px-5 py-2.5 backdrop-blur-md sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div className="flex items-center gap-3">
           <button
@@ -542,68 +615,6 @@ export function ResumeEditorPage() {
           <span className="hidden flex-shrink-0 text-xs text-ink-subtle sm:inline" role="status">
             {saving ? 'Saving…' : savedAt ? `Autosaved ✓` : ''}
           </span>
-
-          {/* Tools — every AI and analysis feature, one entry point. */}
-          <Menu
-            label="Resume tools"
-            className="relative z-40 flex-shrink-0"
-            triggerClassName="rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
-            trigger={
-              <span className={buttonClasses({ variant: 'secondary', size: 'sm' })}>
-                <span aria-hidden>✨</span>
-                <span className="hidden sm:inline">Tools</span>
-              </span>
-            }
-          >
-            {(close) => (
-              <>
-                <MenuItem
-                  onSelect={() => {
-                    close()
-                    setAiOpen(true)
-                  }}
-                >
-                  Ask AI / Improve resume
-                </MenuItem>
-                <MenuItem
-                  onSelect={() => {
-                    close()
-                    setAtsOpen(true)
-                  }}
-                >
-                  ATS checker
-                </MenuItem>
-                <MenuItem
-                  onSelect={() => {
-                    close()
-                    navigate(`/customize?resume=${id}`)
-                  }}
-                >
-                  Customize for a job
-                </MenuItem>
-                <MenuItem
-                  onSelect={() => {
-                    close()
-                    navigate(`/resume/new/interview?resume=${id}`)
-                  }}
-                >
-                  {resume?.creationMethod === 'ai-interview' ||
-                  (resume?.aiInterview?.messages?.length ?? 0) > 0
-                    ? 'Continue resume interview'
-                    : 'Resume interview'}
-                </MenuItem>
-                <MenuSeparator />
-                <MenuItem
-                  onSelect={() => {
-                    close()
-                    navigate(`/cover-letters/new?resume=${id}`)
-                  }}
-                >
-                  Write a cover letter
-                </MenuItem>
-              </>
-            )}
-          </Menu>
 
           <Button
             size="sm"
@@ -811,9 +822,9 @@ export function ResumeEditorPage() {
             resumeId={id}
             resume={previewResume}
             onApply={handleApplyAi}
-            onTailor={() => navigate(`/customize?resume=${id}`)}
-            onInterview={() => navigate(`/resume/new/interview?resume=${id}`)}
-            onCoverLetter={() => navigate(`/cover-letters/new?resume=${id}`)}
+            onTailor={() => navigate(withReturnTo(`/customize?resume=${id}`, here))}
+            onInterview={() => navigate(withReturnTo(`/resume/new/interview?resume=${id}`, here))}
+            onCoverLetter={() => navigate(withReturnTo(`/cover-letters/new?resume=${id}`, here))}
             hasInterview={
               resume?.creationMethod === 'ai-interview' ||
               (resume?.aiInterview?.messages?.length ?? 0) > 0
