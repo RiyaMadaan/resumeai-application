@@ -18,6 +18,7 @@ import {
 } from '@/components/resume/ResumeSectionsEditor'
 import { SkillsInput } from '@/components/resume/SkillsInput'
 import { TemplateGallery } from '@/components/resume/TemplateGallery'
+import { TemplateThumbnail } from '@/templates/TemplateThumbnail'
 import { Modal } from '@/components/ui/Modal'
 import { Menu, MenuItem, MenuSeparator } from '@/components/ui/Menu'
 import {
@@ -472,10 +473,10 @@ export function ResumeEditorPage() {
      "incomplete" would invent a task they never asked for. */
   const navGroup = (label: string, entries: EditorSectionDef[]) => (
     <div>
-      <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-ink-subtle">
+      <p className="px-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-subtle">
         {label}
       </p>
-      <ul className="space-y-0.5">
+      <ul className="space-y-px">
         {entries.map((entry) => {
           const active = entry.id === section
           return (
@@ -485,7 +486,7 @@ export function ResumeEditorPage() {
                 onClick={() => setSection(entry.id)}
                 aria-current={active ? 'true' : undefined}
                 className={
-                  'flex w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-left text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ' +
+                  'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-left text-[13.5px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ' +
                   (active
                     ? 'bg-brand-50 font-semibold text-brand-700'
                     : 'font-medium text-ink-muted hover:bg-slate-100 hover:text-ink')
@@ -502,7 +503,7 @@ export function ResumeEditorPage() {
   )
 
   const sectionNav = (
-    <nav aria-label="Resume sections" className="lg:sticky lg:top-32">
+    <nav aria-label="Resume sections">
       {/* A horizontal strip on small screens; the grouped list on desktop. */}
       <ul className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] lg:hidden [&::-webkit-scrollbar]:hidden">
         {EDITOR_SECTIONS.map((entry) => (
@@ -540,18 +541,19 @@ export function ResumeEditorPage() {
         ))}
       </ul>
 
-      <div className="hidden space-y-5 lg:block">
+      <div className="hidden space-y-4 lg:block">
         {navGroup('Content', EDITOR_SECTIONS.filter((e) => e.id !== 'design'))}
         {navGroup('Design', EDITOR_SECTIONS.filter((e) => e.id === 'design'))}
 
-        {/* AI tools. Deliberately quieter than the sections above — they act
-            on the resume rather than being part of it, and none of them is
-            where the work normally happens. */}
-        <div>
-          <p className="flex items-center gap-1.5 px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-ink-subtle">
-            <span aria-hidden>✨</span> AI tools
+        {/* AI tools. Set apart rather than styled louder — they act on the
+            resume rather than being part of it, so they read as a different
+            kind of thing without competing with the content sections. */}
+        <div className="mt-1 rounded-xl bg-slate-50 p-2 pt-1.5 ring-1 ring-slate-100">
+          <p className="flex items-center gap-1.5 px-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-subtle">
+            <SparkleIcon width={12} height={12} className="text-brand-500" />
+            AI tools
           </p>
-          <ul className="space-y-0.5">
+          <ul className="space-y-px">
             {aiTools.map((tool) => (
               <li key={tool.id}>
                 <button
@@ -560,7 +562,7 @@ export function ResumeEditorPage() {
                   disabled={!id}
                   aria-current={tool.active ? 'true' : undefined}
                   className={
-                    'flex w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-left text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:opacity-50 ' +
+                    'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-left text-[13.5px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:opacity-50 ' +
                     (tool.active
                       ? 'bg-brand-50 font-semibold text-brand-700'
                       : 'text-ink-muted hover:bg-slate-100 hover:text-ink')
@@ -609,22 +611,41 @@ export function ResumeEditorPage() {
       </div>
     )
   } else {
-    // Design: the same gallery the toolbar opens, shown in place.
+    // Design. The gallery needs room that a 32rem column doesn't have, so this
+    // shows what is in use and opens the full-width dialog to change it —
+    // rather than cramming sixty thumbnails into the form column.
     sectionForm = (
-      <TemplateGallery
-        selectedId={template}
-        onSelect={setTemplate}
-        previewResume={previewResume ?? undefined}
-      />
+      <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="flex items-start gap-4">
+          <div className="w-24 flex-shrink-0 overflow-hidden rounded-md ring-1 ring-slate-200">
+            <TemplateThumbnail spec={activeTemplate} resume={previewResume ?? undefined} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-ink">{activeTemplate.name}</p>
+            <p className="mt-0.5 text-xs text-ink-subtle">{activeTemplate.category}</p>
+            {activeTemplate.useCase && (
+              <p className="mt-2 text-xs leading-relaxed text-ink-muted">{activeTemplate.useCase}</p>
+            )}
+            <Button
+              variant="secondary"
+              size="sm"
+              className="mt-3"
+              onClick={() => setTemplateOpen(true)}
+            >
+              Browse all templates
+            </Button>
+          </div>
+        </div>
+      </div>
     )
   }
 
   const sectionEditor = (
-    <div>
-      <div className="mb-3">
-        <h2 className="text-base font-semibold tracking-tight text-ink">{current.title}</h2>
-        <p className="mt-0.5 text-sm text-ink-muted">{current.description}</p>
-      </div>
+    <div className="mx-auto w-full max-w-2xl px-5 py-6 sm:px-8 sm:py-8">
+      <header className="mb-6">
+        <h2 className="text-xl font-semibold tracking-tight text-ink">{current.title}</h2>
+        <p className="mt-1 text-sm leading-relaxed text-ink-muted">{current.description}</p>
+      </header>
       {sectionForm}
     </div>
   )
@@ -637,8 +658,8 @@ export function ResumeEditorPage() {
   )
 
   const preview = (
-    <div className="lg:sticky lg:top-32">
-      <div className="flex items-center justify-between gap-3 pb-2">
+    <div className="flex flex-col lg:h-full lg:min-h-0">
+      <div className="flex flex-shrink-0 items-center justify-between gap-3 border-b border-slate-200/70 px-5 py-2.5">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-subtle">
           Live preview
         </p>
@@ -649,7 +670,7 @@ export function ResumeEditorPage() {
             onClick={() => setPreviewOpen(true)}
             aria-label="Expand the preview"
             title="Expand"
-            className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-ink-subtle transition-colors hover:bg-slate-100 hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-ink-subtle transition-colors hover:bg-white hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
           >
             <svg viewBox="0 0 24 24" width={14} height={14} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
@@ -657,12 +678,13 @@ export function ResumeEditorPage() {
           </button>
         </div>
       </div>
-      {/* The paper sits on a tinted canvas so a sparse resume still reads as a
-          sheet of paper rather than a blank panel. */}
-      {/* A permanent scrollbar here too: this column scrolls for a long resume,
-          and a bar that came and went would rescale the page each time. */}
-      <div className="overflow-y-scroll rounded-xl bg-slate-100/80 p-4 sm:p-6 lg:max-h-[calc(100vh-11rem)] [scrollbar-gutter:stable]">
-        <div className="mx-auto w-full" style={{ maxWidth: 820 }}>
+
+      {/* The paper sits on the workspace tint so a sparse resume still reads as
+          a sheet of paper rather than a blank panel. A permanent scrollbar, not
+          `auto`: a bar that came and went would change the width and rescale
+          the page on every toggle. */}
+      <div className="px-5 py-6 [scrollbar-gutter:stable] lg:min-h-0 lg:flex-1 lg:overflow-y-scroll lg:px-8 lg:py-8">
+        <div className="mx-auto w-full" style={{ maxWidth: 860 }}>
           {previewPaper}
         </div>
       </div>
@@ -670,11 +692,17 @@ export function ResumeEditorPage() {
   )
 
   return (
-    <Container className="py-6 sm:py-8">
+    /* A workspace, not a document page: full width, exactly the height left
+       under the navbar, and each pane scrolls on its own. The editor used to
+       sit in the app's 1200px Container, which on a wide screen left a third
+       of the window empty and squeezed the preview — the thing the page is
+       actually for — into whatever was left. Below `lg` this all collapses
+       back to ordinary page flow. */
+    <div className="flex flex-col lg:h-[calc(100vh-4rem)] lg:overflow-hidden">
       {/* Header — one quiet row. The AI tools moved into the sidebar, where
           they sit beside the sections they act on rather than in a dropdown
           floating over the middle of the page. */}
-      <div className="sticky top-16 z-30 -mx-5 mb-6 border-b border-slate-200 bg-white/95 px-5 py-2.5 backdrop-blur-md sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+      <div className="z-30 flex-shrink-0 border-b border-slate-200 bg-white px-4 py-2.5 sm:px-6">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/dashboard')}
@@ -790,8 +818,11 @@ export function ResumeEditorPage() {
         </div>
       </div>
 
+      {/* Notices. Outside the panes so they never scroll away, and out of
+          the grid so they cannot squeeze the preview. */}
+      <div className="flex-shrink-0 space-y-3 px-4 pt-4 empty:hidden sm:px-6">
       {error && resume && (
-        <p role="alert" className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
+        <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
           {error}
         </p>
       )}
@@ -801,7 +832,7 @@ export function ResumeEditorPage() {
         <div
           role="status"
           className={
-            'mt-4 flex items-start justify-between gap-3 rounded-xl px-4 py-3 text-sm ' +
+            'flex items-start justify-between gap-3 rounded-xl px-4 py-3 text-sm ' +
             (generated.failed
               ? 'border border-amber-200 bg-amber-50'
               : 'border border-brand-200 bg-brand-gradient-soft')
@@ -830,7 +861,7 @@ export function ResumeEditorPage() {
       {imported && (
         <div
           role="status"
-          className="mt-4 flex items-start justify-between gap-3 rounded-xl border border-brand-200 bg-brand-gradient-soft px-4 py-3"
+          className="flex items-start justify-between gap-3 rounded-xl border border-brand-200 bg-brand-gradient-soft px-4 py-3"
         >
           <div className="text-sm">
             <p className="text-ink">
@@ -860,7 +891,7 @@ export function ResumeEditorPage() {
       {customizedFor && (
         <div
           role="status"
-          className="mt-4 rounded-xl border border-brand-200 bg-brand-gradient-soft px-4 py-2.5 text-sm"
+          className="rounded-xl border border-brand-200 bg-brand-gradient-soft px-4 py-2.5 text-sm"
         >
           <span className="text-ink">
             Tailored for <span className="font-semibold">{customizedFor}</span>.
@@ -869,22 +900,24 @@ export function ResumeEditorPage() {
         </div>
       )}
 
-      {/* Three columns on desktop; stacked in the same order on smaller
-          screens, so the preview always follows the form being edited.
-          Design swaps the weighting — the gallery needs the room a form
-          doesn't — while keeping the preview live beside it, which is the
-          whole point of choosing a template here. */}
-      <div
-        className={
-          'grid gap-6 lg:items-start lg:gap-8 ' +
-          (section === 'design'
-            ? 'lg:grid-cols-[11rem_minmax(0,1fr)_minmax(0,22rem)]'
-            : 'lg:grid-cols-[11rem_minmax(0,25rem)_minmax(0,1fr)]')
-        }
-      >
-        {sectionNav}
-        {sectionEditor}
-        {preview}
+      </div>
+
+      {/* Sidebar · editor · preview. The preview takes every pixel the other
+          two don't need, so it grows with the window instead of staying a
+          fixed-width card. */}
+      <div className="min-h-0 flex-1 lg:grid lg:grid-cols-[14rem_minmax(24rem,34rem)_minmax(0,1fr)] lg:overflow-hidden">
+        <aside className="border-b border-slate-200 bg-white px-3 py-3 lg:h-full lg:overflow-y-auto lg:border-b-0 lg:border-r lg:py-5">
+          {sectionNav}
+        </aside>
+
+        <div className="bg-white lg:h-full lg:overflow-y-auto lg:border-r lg:border-slate-200">
+          {sectionEditor}
+        </div>
+
+        {/* The workspace the paper sits on. */}
+        <div className="bg-slate-100/70 lg:h-full lg:min-h-0 lg:overflow-hidden">
+          {preview}
+        </div>
       </div>
 
       {/* ATS report — read-only */}
@@ -988,6 +1021,6 @@ export function ResumeEditorPage() {
           onCancel={() => setCustomization(null)}
         />
       )}
-    </Container>
+    </div>
   )
 }
