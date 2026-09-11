@@ -9,14 +9,40 @@ interface ModalProps {
   /** Optional footer area (e.g. action buttons). */
   footer?: ReactNode
   className?: string
+  /**
+   * `center` (default) is the standard dialog. `drawer` slides in from the
+   * right edge at full height — the right shape for a panel of tools you work
+   * alongside, rather than a decision to make and dismiss.
+   */
+  variant?: 'center' | 'drawer'
 }
+
+/**
+ * Every dialog currently open, oldest first.
+ *
+ * Dialogs can legitimately nest — a panel of tools that opens a confirmation,
+ * say — and without this, one Escape would close the whole stack, because both
+ * dialogs' key handlers are bound to the document. Only the dialog on top
+ * responds.
+ */
+const openDialogs: symbol[] = []
 
 /**
  * Modal — accessible dialog. Closes on Escape and backdrop click, locks body
  * scroll while open. Kept dependency-free and intentionally simple.
  */
-export function Modal({ open, onClose, title, children, footer, className }: ModalProps) {
+export function Modal({
+  open,
+  onClose,
+  title,
+  children,
+  footer,
+  className,
+  variant = 'center',
+}: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null)
+  // A stable identity for this dialog's place in the stack.
+  const idRef = useRef<symbol>(Symbol('dialog'))
 
   useEffect(() => {
     if (!open) return
@@ -31,7 +57,12 @@ export function Modal({ open, onClose, title, children, footer, className }: Mod
         ) ?? [],
       ).filter((el) => el.offsetParent !== null)
 
+    const id = idRef.current
+    openDialogs.push(id)
+
     const onKey = (e: KeyboardEvent) => {
+      // Only the topmost dialog reacts, so Escape closes one layer at a time.
+      if (openDialogs[openDialogs.length - 1] !== id) return
       if (e.key === 'Escape') {
         onClose()
         return
@@ -60,7 +91,10 @@ export function Modal({ open, onClose, title, children, footer, className }: Mod
     return () => {
       clearTimeout(timer)
       document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = ''
+      const index = openDialogs.indexOf(id)
+      if (index !== -1) openDialogs.splice(index, 1)
+      // Only release the page's scroll lock once nothing is left open.
+      if (openDialogs.length === 0) document.body.style.overflow = ''
       previouslyFocused?.focus?.()
     }
   }, [open, onClose])
@@ -69,7 +103,10 @@ export function Modal({ open, onClose, title, children, footer, className }: Mod
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className={cn(
+        'fixed inset-0 z-50 flex',
+        variant === 'drawer' ? 'justify-end' : 'items-center justify-center p-4',
+      )}
       role="dialog"
       aria-modal="true"
       aria-label={title}
@@ -86,7 +123,10 @@ export function Modal({ open, onClose, title, children, footer, className }: Mod
         ref={panelRef}
         tabIndex={-1}
         className={cn(
-          'relative w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-card animate-fade-up focus:outline-none',
+          'relative bg-white shadow-card focus:outline-none',
+          variant === 'drawer'
+            ? 'h-full w-full max-w-md overflow-y-auto border-l border-slate-200 p-6 animate-fade-in'
+            : 'w-full max-w-md rounded-xl border border-slate-200 p-6 animate-fade-up',
           className,
         )}
       >
