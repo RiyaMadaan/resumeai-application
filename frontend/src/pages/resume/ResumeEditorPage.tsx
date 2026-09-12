@@ -415,6 +415,9 @@ export function ResumeEditorPage() {
   const current =
     EDITOR_SECTIONS.find((entry) => entry.id === section) ?? EDITOR_SECTIONS[0]
 
+  /** This resume, as the return path for any tool opened from it. */
+  const here = `/resume/${id}`
+
   /** The last ATS score, straight off the resume — nothing is recomputed. */
   const atsScore = typeof resume?.atsAnalysis?.score === 'number' ? resume.atsAnalysis.score : null
   const atsTone =
@@ -427,61 +430,6 @@ export function ResumeEditorPage() {
           : atsScore >= 45
             ? 'text-amber-700'
             : 'text-red-700'
-
-  /**
-   * The AI tools, as sidebar entries.
-   *
-   * Two of them are panels that open over the editor; three are their own
-   * pages. The pages are told where they were opened from, so their Back
-   * returns here rather than to a global list — and because that travels in
-   * the URL, it survives a refresh.
-   */
-  const here = `/resume/${id}`
-  const aiTools: {
-    id: string
-    label: string
-    run: () => void
-    Icon: (props: { width?: number; height?: number }) => React.ReactElement
-    /** True while this tool's panel is open over the editor. */
-    active?: boolean
-  }[] = [
-    {
-      id: 'improve',
-      label: 'Improve with AI',
-      Icon: SparkleIcon,
-      run: () => setAiOpen(true),
-      active: aiOpen,
-    },
-    {
-      id: 'customize',
-      label: 'Customize for a job',
-      Icon: TargetIcon,
-      run: () => navigate(withReturnTo(`/customize?resume=${id}`, here)),
-    },
-    {
-      id: 'ats',
-      label: 'ATS checker',
-      Icon: GaugeIcon,
-      run: () => setAtsOpen(true),
-      active: atsOpen,
-    },
-    {
-      id: 'interview',
-      label:
-        resume?.creationMethod === 'ai-interview' ||
-        (resume?.aiInterview?.messages?.length ?? 0) > 0
-          ? 'Continue interview'
-          : 'Resume interview',
-      Icon: ChatIcon,
-      run: () => navigate(withReturnTo(`/resume/new/interview?resume=${id}`, here)),
-    },
-    {
-      id: 'cover',
-      label: 'Cover letter',
-      Icon: MailIcon,
-      run: () => navigate(withReturnTo(`/cover-letters/new?resume=${id}`, here)),
-    },
-  ]
 
   /* ── Left column: section navigation ──
      Grouped and deliberately plain. Numbered circles and completion ticks
@@ -724,36 +672,18 @@ export function ResumeEditorPage() {
             </span>
           </button>
 
-          {/* Every AI action behind one compact menu, rather than a permanent
-              panel taking width from the resume. */}
-          <Menu
-            label="AI tools"
-            className="relative z-40 flex-shrink-0"
-            triggerClassName="rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-            trigger={
-              <span className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:bg-slate-100 hover:text-ink">
-                <SparkleIcon width={15} height={15} className="text-brand-500" />
-                <span className="hidden lg:inline">AI</span>
-              </span>
-            }
+          {/* Opens the contextual assistant. Customize, the interview, the ATS
+              checker and cover letters are application-level tools and live in
+              the global rail — repeating them here made this a second menu. */}
+          <button
+            type="button"
+            onClick={() => setAiOpen(true)}
+            disabled={!id}
+            className="flex flex-shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:opacity-50"
           >
-            {(close) => (
-              <>
-                {aiTools.map((tool) => (
-                  <MenuItem
-                    key={tool.id}
-                    icon={<tool.Icon width={15} height={15} />}
-                    onSelect={() => {
-                      close()
-                      tool.run()
-                    }}
-                  >
-                    {tool.label}
-                  </MenuItem>
-                ))}
-              </>
-            )}
-          </Menu>
+            <SparkleIcon width={15} height={15} className="text-brand-500" />
+            <span className="hidden lg:inline">Ask AI</span>
+          </button>
 
           <Button
             size="sm"
@@ -797,6 +727,41 @@ export function ResumeEditorPage() {
                   }}
                 >
                   Expand preview
+                </MenuItem>
+                <MenuSeparator />
+                {/* The same tools the global rail carries, but opened *for this
+                    resume* and stamped with a return path, so Back comes here
+                    rather than to a picker. Kept out of the AI drawer, which is
+                    the assistant rather than a menu. */}
+                <MenuItem
+                  icon={<TargetIcon width={15} height={15} />}
+                  onSelect={() => {
+                    close()
+                    navigate(withReturnTo(`/customize?resume=${id}`, here))
+                  }}
+                >
+                  Customize for this job
+                </MenuItem>
+                <MenuItem
+                  icon={<ChatIcon width={15} height={15} />}
+                  onSelect={() => {
+                    close()
+                    navigate(withReturnTo(`/resume/new/interview?resume=${id}`, here))
+                  }}
+                >
+                  {resume?.creationMethod === 'ai-interview' ||
+                  (resume?.aiInterview?.messages?.length ?? 0) > 0
+                    ? 'Continue interview'
+                    : 'Resume interview'}
+                </MenuItem>
+                <MenuItem
+                  icon={<MailIcon width={15} height={15} />}
+                  onSelect={() => {
+                    close()
+                    navigate(withReturnTo(`/cover-letters/new?resume=${id}`, here))
+                  }}
+                >
+                  Cover letter from this resume
                 </MenuItem>
                 <MenuSeparator />
                 <MenuItem
@@ -966,13 +931,7 @@ export function ResumeEditorPage() {
             resumeId={id}
             resume={previewResume}
             onApply={handleApplyAi}
-            onTailor={() => navigate(withReturnTo(`/customize?resume=${id}`, here))}
-            onInterview={() => navigate(withReturnTo(`/resume/new/interview?resume=${id}`, here))}
-            onCoverLetter={() => navigate(withReturnTo(`/cover-letters/new?resume=${id}`, here))}
-            hasInterview={
-              resume?.creationMethod === 'ai-interview' ||
-              (resume?.aiInterview?.messages?.length ?? 0) > 0
-            }
+            section={section}
           />
         </Modal>
       )}
