@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { PageShell } from '@/components/layout/PageShell'
 import { Button } from '@/components/ui/Button'
 import { Textarea } from '@/components/ui/Input'
@@ -174,6 +174,7 @@ export function ResumeEditorPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const [resume, setResume] = useState<Resume | null>(null)
   const [loading, setLoading] = useState(true)
@@ -231,6 +232,22 @@ export function ResumeEditorPage() {
       active = false
     }
   }, [id])
+
+  /**
+   * Open a tool the global rail asked for, e.g. /resume/:id?tool=ats.
+   *
+   * The parameter is cleared with `replace`, so the panel doesn't reopen on a
+   * refresh and no extra history entry is created for what is only UI state.
+   */
+  useEffect(() => {
+    const tool = searchParams.get('tool')
+    if (tool !== 'ats' && tool !== 'improve') return
+    if (tool === 'ats') setAtsOpen(true)
+    else setAiOpen(true)
+    const next = new URLSearchParams(searchParams)
+    next.delete('tool')
+    setSearchParams(next, { replace: true })
+  }, [searchParams, setSearchParams])
 
   /**
    * Pick up whatever was handed over via router state, then clear it from
@@ -471,114 +488,39 @@ export function ResumeEditorPage() {
      belong to the creation wizard, where there is a sequence to finish; here
      the user is editing a document that already exists, and marking sections
      "incomplete" would invent a task they never asked for. */
-  const navGroup = (label: string, entries: EditorSectionDef[]) => (
-    <div>
-      <p className="px-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-subtle">
-        {label}
-      </p>
-      <ul className="space-y-px">
-        {entries.map((entry) => {
-          const active = entry.id === section
-          return (
-            <li key={entry.id}>
-              <button
-                type="button"
-                onClick={() => setSection(entry.id)}
-                aria-current={active ? 'true' : undefined}
-                className={
-                  'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-left text-[13.5px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ' +
-                  (active
-                    // A white chip on the tinted ground — present, but not the
-                    // filled purple pill the application rail uses.
-                    ? 'bg-white font-semibold text-brand-700 shadow-sm ring-1 ring-slate-200'
-                    : 'font-medium text-ink-muted hover:bg-white/70 hover:text-ink')
-                }
-              >
-                <entry.Icon width={16} height={16} />
-                <span className="truncate">{entry.label}</span>
-              </button>
-            </li>
-          )
-        })}
-      </ul>
+  /* ── Section navigation ──
+     A horizontal tab bar, not a second vertical sidebar. One rail is the
+     application's navigation; a resume's own sections are a band under its
+     header, which keeps the width for the form and the preview and stops the
+     editor reading as two competing navigations. */
+  const sectionTabs = (
+    <div
+      role="tablist"
+      aria-label="Resume sections"
+      className="-mx-1 flex gap-0.5 overflow-x-auto px-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
+      {EDITOR_SECTIONS.map((entry) => {
+        const active = entry.id === section
+        return (
+          <button
+            key={entry.id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => setSection(entry.id)}
+            className={
+              'flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2.5 text-[13.5px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ' +
+              (active
+                ? 'border-brand-600 font-semibold text-brand-700'
+                : 'border-transparent font-medium text-ink-muted hover:border-slate-300 hover:text-ink')
+            }
+          >
+            <entry.Icon width={15} height={15} />
+            {entry.label}
+          </button>
+        )
+      })}
     </div>
-  )
-
-  const sectionNav = (
-    <nav aria-label="Resume sections">
-      {/* A horizontal strip on small screens; the grouped list on desktop. */}
-      <ul className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] lg:hidden [&::-webkit-scrollbar]:hidden">
-        {EDITOR_SECTIONS.map((entry) => (
-          <li key={entry.id} className="flex-shrink-0">
-            <button
-              type="button"
-              onClick={() => setSection(entry.id)}
-              aria-current={entry.id === section ? 'true' : undefined}
-              className={
-                'rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ' +
-                (entry.id === section
-                  ? 'bg-brand-600 text-white'
-                  : 'bg-slate-100 text-ink-muted hover:bg-slate-200')
-              }
-            >
-              {entry.label}
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      {/* Small screens: the same tools, as a second chip row. */}
-      <ul className="-mx-1 mt-2 flex gap-1 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] lg:hidden [&::-webkit-scrollbar]:hidden">
-        {aiTools.map((tool) => (
-          <li key={tool.id} className="flex-shrink-0">
-            <button
-              type="button"
-              onClick={tool.run}
-              disabled={!id}
-              className="rounded-full border border-slate-200 px-3.5 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:border-brand-300 hover:text-brand-700 disabled:opacity-50"
-            >
-              {tool.label}
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      <div className="hidden space-y-4 lg:block">
-        {navGroup('Content', EDITOR_SECTIONS.filter((e) => e.id !== 'design'))}
-        {navGroup('Design', EDITOR_SECTIONS.filter((e) => e.id === 'design'))}
-
-        {/* AI tools. Set apart rather than styled louder — they act on the
-            resume rather than being part of it, so they read as a different
-            kind of thing without competing with the content sections. */}
-        <div className="mt-1 rounded-xl border border-slate-200/80 p-2 pt-1.5">
-          <p className="flex items-center gap-1.5 px-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-subtle">
-            <SparkleIcon width={12} height={12} className="text-brand-500" />
-            AI tools
-          </p>
-          <ul className="space-y-px">
-            {aiTools.map((tool) => (
-              <li key={tool.id}>
-                <button
-                  type="button"
-                  onClick={tool.run}
-                  disabled={!id}
-                  aria-current={tool.active ? 'true' : undefined}
-                  className={
-                    'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-left text-[13.5px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:opacity-50 ' +
-                    (tool.active
-                      ? 'bg-white font-semibold text-brand-700 shadow-sm ring-1 ring-slate-200'
-                      : 'text-ink-muted hover:bg-white/70 hover:text-ink')
-                  }
-                >
-                  <tool.Icon width={16} height={16} />
-                  <span className="truncate">{tool.label}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </nav>
   )
 
   /* ── Middle column: only the active section's form ── */
@@ -642,13 +584,42 @@ export function ResumeEditorPage() {
     )
   }
 
+  /** Put the section's fields back to what the server last returned. */
+  const handleResetSection = () => {
+    if (!resume) return
+    setSections({
+      personalInfo: { ...emptyPersonalInfo, ...resume.personalInfo },
+      experience: resume.experience ?? [],
+      education: resume.education ?? [],
+      projects: resume.projects ?? [],
+      certifications: resume.certifications ?? [],
+    })
+    setSummary(resume.summary)
+    setSkills(resume.skills ?? [])
+    setTitle(resume.title)
+  }
+
   const sectionEditor = (
     <div className="mx-auto w-full max-w-2xl px-5 py-6 sm:px-7">
       <header className="mb-6">
         <h2 className="text-xl font-semibold tracking-tight text-ink">{current.title}</h2>
         <p className="mt-1 text-sm leading-relaxed text-ink-muted">{current.description}</p>
       </header>
+
       {sectionForm}
+
+      {/* Edits already save on their own; these are for saving now, and for
+          getting back to the last saved state after a change you regret. */}
+      {current.id !== 'design' && (
+        <div className="mt-6 flex items-center justify-end gap-2 border-t border-slate-100 pt-4">
+          <Button variant="ghost" size="sm" onClick={handleResetSection} disabled={saving}>
+            Reset
+          </Button>
+          <Button size="sm" onClick={handleSave} disabled={saving} aria-busy={saving}>
+            {saving ? 'Saving…' : 'Save changes'}
+          </Button>
+        </div>
+      )}
     </div>
   )
 
@@ -701,11 +672,9 @@ export function ResumeEditorPage() {
        actually for — into whatever was left. Below `lg` this all collapses
        back to ordinary page flow. */
     <div className="flex flex-col lg:h-screen lg:overflow-hidden">
-      {/* Header — one quiet row. The AI tools moved into the sidebar, where
-          they sit beside the sections they act on rather than in a dropdown
-          floating over the middle of the page. */}
-      <div className="z-30 flex-shrink-0 border-b border-slate-200 bg-white px-4 py-2.5 sm:px-6">
-        <div className="flex items-center gap-3">
+      {/* Header: what this resume is, and what you can do to it. */}
+      <div className="z-30 flex-shrink-0 border-b border-slate-200 bg-white px-4 sm:px-6">
+        <div className="flex items-center gap-3 py-2.5">
           <button
             onClick={() => navigate('/dashboard')}
             className="flex-shrink-0 whitespace-nowrap text-sm font-medium text-ink-muted transition-colors hover:text-brand-700"
@@ -715,7 +684,7 @@ export function ResumeEditorPage() {
 
           <span aria-hidden className="hidden h-4 w-px flex-shrink-0 bg-slate-200 sm:block" />
 
-          {/* The resume's name, edited in place. */}
+          {/* Name over template: the document, then its design. */}
           <div className="min-w-0 flex-1">
             <label htmlFor="resume-title" className="sr-only">
               Resume name
@@ -725,29 +694,23 @@ export function ResumeEditorPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Untitled Resume"
-              className="w-full max-w-xs truncate rounded-lg border border-transparent bg-transparent px-2 py-1 text-sm font-semibold text-ink transition-colors hover:border-slate-200 focus:border-brand-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+              className="w-full max-w-sm truncate rounded-lg border border-transparent bg-transparent px-2 py-0.5 text-[15px] font-semibold text-ink transition-colors hover:border-slate-200 focus:border-brand-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             />
+            <button
+              type="button"
+              onClick={() => setTemplateOpen(true)}
+              className="ml-2 truncate text-xs text-ink-subtle transition-colors hover:text-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            >
+              {activeTemplate.name} template
+            </button>
           </div>
 
           <span className="hidden flex-shrink-0 text-xs text-ink-subtle sm:inline" role="status">
-            {saving ? 'Saving…' : savedAt ? `Autosaved ✓` : ''}
+            {saving ? 'Saving…' : savedAt ? 'Autosaved ✓' : ''}
           </span>
 
-          {/* The template in use, and a one-click way to change it. The Design
-              section shows the same gallery; this is the shortcut from
-              anywhere in the editor. */}
-          <button
-            type="button"
-            onClick={() => setTemplateOpen(true)}
-            className="hidden max-w-[11rem] flex-shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:bg-slate-100 hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 lg:inline-flex"
-          >
-            <LayoutIcon width={15} height={15} />
-            <span className="truncate">{activeTemplate.name}</span>
-          </button>
-
-          {/* The last ATS score, if one has been run. A readout first and a
-              way back into the report second — it never starts an analysis by
-              itself; the modal does that, once per open. */}
+          {/* The last score, if one has been run. A readout first; it never
+              starts an analysis by itself — the modal does that, once per open. */}
           <button
             type="button"
             onClick={() => setAtsOpen(true)}
@@ -761,6 +724,37 @@ export function ResumeEditorPage() {
             </span>
           </button>
 
+          {/* Every AI action behind one compact menu, rather than a permanent
+              panel taking width from the resume. */}
+          <Menu
+            label="AI tools"
+            className="relative z-40 flex-shrink-0"
+            triggerClassName="rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            trigger={
+              <span className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:bg-slate-100 hover:text-ink">
+                <SparkleIcon width={15} height={15} className="text-brand-500" />
+                <span className="hidden lg:inline">AI</span>
+              </span>
+            }
+          >
+            {(close) => (
+              <>
+                {aiTools.map((tool) => (
+                  <MenuItem
+                    key={tool.id}
+                    icon={<tool.Icon width={15} height={15} />}
+                    onSelect={() => {
+                      close()
+                      tool.run()
+                    }}
+                  >
+                    {tool.label}
+                  </MenuItem>
+                ))}
+              </>
+            )}
+          </Menu>
+
           <Button
             size="sm"
             className="flex-shrink-0"
@@ -772,11 +766,10 @@ export function ResumeEditorPage() {
             <span className="hidden sm:inline"> PDF</span>
           </Button>
 
-          {/* Overflow — the things you need occasionally. */}
           <Menu
             label="More actions"
             className="relative z-40 flex-shrink-0"
-            triggerClassName="rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+            triggerClassName="rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             trigger={
               <span className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-subtle transition-colors hover:bg-slate-100 hover:text-ink">
                 <svg viewBox="0 0 24 24" width={18} height={18} fill="currentColor" aria-hidden>
@@ -818,6 +811,9 @@ export function ResumeEditorPage() {
             )}
           </Menu>
         </div>
+
+        {/* The resume's own sections, under its header. */}
+        {sectionTabs}
       </div>
 
       {/* Notices. Outside the panes so they never scroll away, and out of
@@ -904,20 +900,9 @@ export function ResumeEditorPage() {
 
       </div>
 
-      {/* Section nav · form · preview.
- 
-          These sit *on* the page rather than being more chrome. The global
-          rail is the application's navigation — white, bordered, with the
-          brand and the account on it. This column only moves around inside one
-          document, so it is narrower, sits directly on the page ground with no
-          border or fill of its own, and marks its active row differently. The
-          form is a white panel, which makes it read as content rather than a
-          third navigation surface. */}
-      <div className="min-h-0 flex-1 bg-slate-50 lg:grid lg:grid-cols-[10.5rem_minmax(20rem,28rem)_minmax(0,1fr)] lg:gap-5 lg:overflow-hidden lg:p-5">
-        <aside className="border-b border-slate-200 bg-white px-3 py-3 lg:h-full lg:overflow-y-auto lg:border-b-0 lg:bg-transparent lg:px-0 lg:py-1">
-          {sectionNav}
-        </aside>
-
+      {/* Editor and preview. With the sections moved into the header band,
+          these two split the width between them. */}
+      <div className="min-h-0 flex-1 bg-slate-50 lg:grid lg:grid-cols-[minmax(24rem,34rem)_minmax(0,1fr)] lg:gap-5 lg:overflow-hidden lg:p-5">
         <div className="lg:h-full lg:overflow-y-auto lg:rounded-xl lg:border lg:border-slate-200 lg:bg-white">
           {sectionEditor}
         </div>
