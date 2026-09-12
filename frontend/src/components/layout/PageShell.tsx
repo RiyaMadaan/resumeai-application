@@ -12,6 +12,8 @@ import { cn } from '@/lib/cn'
  * between screens even after the navigation was unified.
  *
  * The width is a deliberate choice per page, not a free value — see `Width`.
+ * Whichever is chosen, the container is left-aligned, so the left edge is
+ * identical on every page and only the right edge moves.
  */
 
 /**
@@ -62,7 +64,12 @@ export function PageShell({
   const hasHeader = !!(title || description || actions)
 
   return (
-    <div className={cn('mx-auto w-full', WIDTHS[width], PAGE_X, PAGE_Y, className)}>
+    // Left-aligned, not centred. `mx-auto` centres the box inside the content
+    // area, so each width produced a different left edge — a narrow page began
+    // ~200px right of a wide one, and the page's own back link, title and cards
+    // inherited that offset. Aligning left means every page starts at the same
+    // x after the rail and only the right edge varies with the width.
+    <div className={cn('w-full', WIDTHS[width], PAGE_X, PAGE_Y, className)}>
       {back && (
         <button
           type="button"

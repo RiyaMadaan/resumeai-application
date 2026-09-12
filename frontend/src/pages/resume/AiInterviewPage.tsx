@@ -375,8 +375,6 @@ export function AiInterviewPage() {
   /* ── Chat ── */
   return (
     <PageShell
-      width="default"
-      className="lg:max-w-5xl"
       back={back}
       title={resumeId ? 'Continue resume interview' : 'Resume interview'}
       description="Practice real interview questions and answer in your own words — I'll turn it into a resume."
