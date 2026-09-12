@@ -31,7 +31,9 @@ export function ToolPage({
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    // No background or min-height here: the application shell supplies both,
+    // so a page can't end up on a slightly different ground to its neighbours.
+    <div>
       <div
         className={cn(
           'mx-auto w-full px-5 py-8 sm:px-6 sm:py-10',

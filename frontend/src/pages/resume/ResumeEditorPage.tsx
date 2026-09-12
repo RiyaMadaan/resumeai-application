@@ -905,7 +905,7 @@ export function ResumeEditorPage() {
       {/* Sidebar · editor · preview. The preview takes every pixel the other
           two don't need, so it grows with the window instead of staying a
           fixed-width card. */}
-      <div className="min-h-0 flex-1 lg:grid lg:grid-cols-[14rem_minmax(24rem,34rem)_minmax(0,1fr)] lg:overflow-hidden">
+      <div className="min-h-0 flex-1 lg:grid lg:grid-cols-[12rem_minmax(22rem,30rem)_minmax(0,1fr)] lg:overflow-hidden">
         <aside className="border-b border-slate-200 bg-white px-3 py-3 lg:h-full lg:overflow-y-auto lg:border-b-0 lg:border-r lg:py-5">
           {sectionNav}
         </aside>

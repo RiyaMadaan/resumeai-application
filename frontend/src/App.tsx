@@ -37,7 +37,7 @@ import { ProtectedRoute } from '@/routes/ProtectedRoute'
  *   /resume/:id            resume editor               (protected)
  *
  * The public marketing website is a separate deployment; its CTAs link here.
- * Protected routes render inside AppLayout (AppNavbar + content).
+ * Protected routes render inside AppLayout (the navigation rail + content).
  */
 function App() {
   return (

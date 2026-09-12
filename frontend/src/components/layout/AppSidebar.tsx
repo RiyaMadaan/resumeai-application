@@ -17,15 +17,13 @@ import { useAuth } from '@/context/AuthContext'
 /**
  * AppSidebar — the application's primary navigation.
  *
- * The browsing surfaces (resumes, templates, cover letters, account) share
- * this rail so the product has one obvious spine. The editor deliberately
- * doesn't: it is a focused mode with its own contextual sidebar, and carrying
- * two sidebars at once would leave the resume preview fighting for what's
- * left of the width.
+ * Every authenticated page renders beside this rail, including the editor, so
+ * the product reads as one application with a changing content area rather
+ * than a set of separate pages. It is mounted once by AppLayout and is not
+ * re-created on navigation.
  *
- * The AI tools listed here are entry points, not a second home for the
- * editor's tools — each one needs a resume, so they route through the resume
- * picker when opened from outside one.
+ * The editor keeps its own second column for the resume's sections; that one
+ * navigates *within* a document, where this one navigates between them.
  */
 
 interface NavEntry {
@@ -36,15 +34,36 @@ interface NavEntry {
   nested?: boolean
 }
 
-const MAIN: NavEntry[] = [
-  { to: '/dashboard', label: 'My resumes', Icon: BriefcaseIcon },
-  { to: '/templates', label: 'Templates', Icon: LayoutIcon },
-  { to: '/cover-letters', label: 'Cover letters', Icon: MailIcon, nested: true },
-]
-
-const TOOLS: NavEntry[] = [
-  { to: '/customize', label: 'Customize for a job', Icon: TargetIcon },
-  { to: '/resume/new/interview', label: 'Resume interview', Icon: ChatIcon },
+/**
+ * The rail's groups.
+ *
+ * Only routes that genuinely stand on their own appear here. "Improve with AI"
+ * and the ATS checker are deliberately absent: both act on a resume that is
+ * already open and exist as panels in the editor, so a global entry would have
+ * nowhere to go without inventing a picker screen. They sit in the editor's own
+ * AI tools group, beside the sections they act on.
+ */
+const GROUPS: { label: string; entries: NavEntry[]; tinted?: boolean }[] = [
+  {
+    label: 'Content',
+    entries: [{ to: '/dashboard', label: 'Resumes', Icon: BriefcaseIcon }],
+  },
+  {
+    label: 'Documents',
+    entries: [{ to: '/cover-letters', label: 'Cover letters', Icon: MailIcon, nested: true }],
+  },
+  {
+    label: 'Design',
+    entries: [{ to: '/templates', label: 'Templates', Icon: LayoutIcon }],
+  },
+  {
+    label: 'AI tools',
+    tinted: true,
+    entries: [
+      { to: '/customize', label: 'Customize for a job', Icon: TargetIcon },
+      { to: '/resume/new/interview', label: 'Resume interview', Icon: ChatIcon },
+    ],
+  },
 ]
 
 function NavRow({ entry }: { entry: NavEntry }) {
@@ -90,30 +109,27 @@ export function AppSidebar() {
         </NavLink>
       </div>
 
-      <nav aria-label="Main" className="min-h-0 flex-1 space-y-4 overflow-y-auto px-3 pb-4">
-        <ul className="space-y-px">
-          {MAIN.map((entry) => (
-            <li key={entry.to}>
-              <NavRow entry={entry} />
-            </li>
-          ))}
-        </ul>
-
-        {/* Set apart, as in the editor — these act on a resume rather than
-            being places in the app. */}
-        <div className="rounded-xl bg-slate-50 p-2 pt-1.5 ring-1 ring-slate-100">
-          <GroupLabel>
-            <SparkleIcon width={12} height={12} className="text-brand-500" />
-            AI tools
-          </GroupLabel>
-          <ul className="space-y-px">
-            {TOOLS.map((entry) => (
-              <li key={entry.to}>
-                <NavRow entry={entry} />
-              </li>
-            ))}
-          </ul>
-        </div>
+      <nav aria-label="Main" className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 pb-4">
+        {GROUPS.map((group) => (
+          <div
+            key={group.label}
+            // The AI group is set apart: these act on a resume rather than
+            // being places in the app.
+            className={group.tinted ? 'rounded-xl bg-slate-50 p-2 pt-1.5 ring-1 ring-slate-100' : ''}
+          >
+            <GroupLabel>
+              {group.tinted && <SparkleIcon width={12} height={12} className="text-brand-500" />}
+              {group.label}
+            </GroupLabel>
+            <ul className="space-y-px">
+              {group.entries.map((entry) => (
+                <li key={entry.to}>
+                  <NavRow entry={entry} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </nav>
 
       {/* Account */}
