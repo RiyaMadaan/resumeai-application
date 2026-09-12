@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Container } from '@/components/ui/Container'
+import { PageShell } from '@/components/layout/PageShell'
 import { Button } from '@/components/ui/Button'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { LayoutIcon, PlusIcon, SparkleIcon } from '@/components/ui/icons'
@@ -92,7 +92,7 @@ export function AccountPage() {
     : null
 
   return (
-    <Container className="max-w-4xl py-8 sm:py-12">
+    <PageShell width="narrow">
       {/* Identity card */}
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft">
         <div className="h-20 bg-brand-gradient sm:h-24" aria-hidden />
@@ -217,6 +217,6 @@ export function AccountPage() {
           Log out
         </Button>
       </section>
-    </Container>
+    </PageShell>
   )
 }

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
-import { ToolPage } from '@/components/layout/ToolPage'
+import { PageShell } from '@/components/layout/PageShell'
 import { Spinner } from '@/components/ui/LoadingState'
 import { resumesApi, ACCEPTED_UPLOAD_EXTENSIONS, MAX_UPLOAD_BYTES } from '@/api/resumes.api'
 import { getApiErrorMessage } from '@/api/client'
@@ -123,7 +123,7 @@ export function UploadResumePage() {
   }
 
   return (
-    <ToolPage
+    <PageShell
       back={{ to: '/resume/new', label: 'Back' }}
       title="Upload your existing resume"
       description="We'll turn your PDF or DOCX into an editable resume. Nothing is invented — anything we can't read is left for you to fill in."
@@ -259,6 +259,6 @@ export function UploadResumePage() {
           Cancel
         </Button>
       </div>
-    </ToolPage>
+    </PageShell>
   )
 }

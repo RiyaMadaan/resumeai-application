@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Container } from '@/components/ui/Container'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Modal } from '@/components/ui/Modal'
@@ -8,7 +7,7 @@ import { Input } from '@/components/ui/Input'
 import { ResumeCardSkeleton } from '@/components/ui/Skeleton'
 import { ResumeCard } from '@/components/resume/ResumeCard'
 import { PlusIcon } from '@/components/ui/icons'
-import { PageHeader } from '@/components/layout/ToolPage'
+import { PageShell } from '@/components/layout/PageShell'
 import { getTemplate } from '@/templates/catalog'
 import { AtsScoreModal } from '@/components/resume/AtsScoreModal'
 import { resumesApi } from '@/api/resumes.api'
@@ -143,9 +142,7 @@ export function DashboardPage() {
   })()
 
   return (
-    <Container className="py-8 sm:py-12">
-      {/* Header — a greeting, then the two things you come here to do. */}
-      <PageHeader
+      <PageShell
         title={`${greeting}${user ? `, ${user.name.split(' ')[0]}` : ''}`}
         description="Create, edit and tailor your resumes to land your dream job."
         actions={
@@ -161,7 +158,7 @@ export function DashboardPage() {
             )}
           </>
         }
-      />
+      >
 
       {/* Search — only earns its place once there are enough resumes to sift. */}
       {resumes.length > 3 && (
@@ -302,6 +299,6 @@ export function DashboardPage() {
           removed. This can't be undone.
         </p>
       </Modal>
-    </Container>
+    </PageShell>
   )
 }

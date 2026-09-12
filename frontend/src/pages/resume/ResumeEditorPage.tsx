@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Container } from '@/components/ui/Container'
+import { PageShell } from '@/components/layout/PageShell'
 import { Button } from '@/components/ui/Button'
 import { Textarea } from '@/components/ui/Input'
 import { LoadingState } from '@/components/ui/LoadingState'
@@ -384,14 +384,14 @@ export function ResumeEditorPage() {
 
   if (error && !resume) {
     return (
-      <Container className="py-16">
+      <PageShell>
         <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
           {error}
         </div>
         <Button variant="secondary" className="mt-6" onClick={() => navigate('/dashboard')}>
           ← Back to dashboard
         </Button>
-      </Container>
+      </PageShell>
     )
   }
 
@@ -913,7 +913,7 @@ export function ResumeEditorPage() {
           border or fill of its own, and marks its active row differently. The
           form is a white panel, which makes it read as content rather than a
           third navigation surface. */}
-      <div className="min-h-0 flex-1 bg-slate-50 lg:grid lg:grid-cols-[10.5rem_minmax(20rem,28rem)_minmax(0,1fr)] lg:gap-4 lg:overflow-hidden lg:p-4">
+      <div className="min-h-0 flex-1 bg-slate-50 lg:grid lg:grid-cols-[10.5rem_minmax(20rem,28rem)_minmax(0,1fr)] lg:gap-5 lg:overflow-hidden lg:p-5">
         <aside className="border-b border-slate-200 bg-white px-3 py-3 lg:h-full lg:overflow-y-auto lg:border-b-0 lg:bg-transparent lg:px-0 lg:py-1">
           {sectionNav}
         </aside>

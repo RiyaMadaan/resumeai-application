@@ -127,7 +127,7 @@ export function TemplateGallery({
           </Button>
         </div>
       ) : (
-        <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+        <div className="mt-5 grid grid-cols-2 gap-5 md:grid-cols-3 xl:grid-cols-4">
           {visible.map((spec) => (
             <TemplateCard
               key={spec.id}

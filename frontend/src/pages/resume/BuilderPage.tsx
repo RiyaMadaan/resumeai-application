@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Container } from '@/components/ui/Container'
+import { PageShell } from '@/components/layout/PageShell'
 import { Button } from '@/components/ui/Button'
 import { Input, Textarea } from '@/components/ui/Input'
 import { Stepper } from '@/components/ui/Stepper'
@@ -470,7 +470,7 @@ export function BuilderPage() {
   )
 
   return (
-    <Container className="py-6 sm:py-8">
+    <PageShell>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
           onClick={handleSaveAndExit}
@@ -538,6 +538,6 @@ export function BuilderPage() {
           </div>
         )}
       </div>
-    </Container>
+    </PageShell>
   )
 }

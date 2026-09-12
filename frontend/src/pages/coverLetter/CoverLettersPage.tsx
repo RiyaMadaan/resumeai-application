@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Container } from '@/components/ui/Container'
 import { Button, buttonClasses } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { PageHeader } from '@/components/layout/ToolPage'
+import { PageShell } from '@/components/layout/PageShell'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { Menu, MenuItem } from '@/components/ui/Menu'
 import { PlusIcon, WandIcon } from '@/components/ui/icons'
@@ -66,8 +65,7 @@ export function CoverLettersPage() {
   }
 
   return (
-    <Container className="py-8 sm:py-12">
-      <PageHeader
+      <PageShell
         title="Cover letters"
         description="Written from your resume and tailored to a specific job."
         actions={
@@ -76,7 +74,7 @@ export function CoverLettersPage() {
             New cover letter
           </Button>
         }
-      />
+      >
 
       {error && (
         <p role="alert" className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
@@ -175,6 +173,6 @@ export function CoverLettersPage() {
           ))}
         </div>
       )}
-    </Container>
+    </PageShell>
   )
 }

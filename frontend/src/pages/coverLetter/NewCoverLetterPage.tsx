@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { Input, Textarea } from '@/components/ui/Input'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { ToolPage, Panel, PanelHeader } from '@/components/layout/ToolPage'
+import { PageShell, Panel, PanelHeader } from '@/components/layout/PageShell'
 import { SparkleIcon } from '@/components/ui/icons'
 import { resumesApi } from '@/api/resumes.api'
 import { coverLettersApi } from '@/api/coverLetters.api'
@@ -91,7 +91,7 @@ export function NewCoverLetterPage() {
   if (resumes === null && !error) return <LoadingState label="Loading your resumes…" fullscreen />
 
   return (
-    <ToolPage
+    <PageShell
       back={back}
       title="Cover letter"
       description="Create a professional cover letter tailored to your resume. We only use experience you actually have."
@@ -194,6 +194,6 @@ export function NewCoverLetterPage() {
           </Panel>
         </div>
       )}
-    </ToolPage>
+    </PageShell>
   )
 }

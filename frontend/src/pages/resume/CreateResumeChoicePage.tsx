@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
-import { ToolPage } from '@/components/layout/ToolPage'
+import { PageShell } from '@/components/layout/PageShell'
 import { TemplateThumbnail } from '@/templates/TemplateThumbnail'
 import { getTemplate } from '@/templates/catalog'
 import { getPreferredTemplate } from '@/lib/preferredTemplate'
@@ -50,8 +50,8 @@ export function CreateResumeChoicePage() {
   const template = getTemplate(getPreferredTemplate())
 
   return (
-    <ToolPage
-      width="lg"
+    <PageShell
+      width="default"
       back={{ to: '/dashboard', label: 'Back to resumes' }}
       title="How do you want to build your resume?"
       description="Both routes produce an ordinary resume — you can switch templates, run an ATS check or tailor it to a job either way."
@@ -129,6 +129,6 @@ export function CreateResumeChoicePage() {
         />
         </div>
       </section>
-    </ToolPage>
+    </PageShell>
   )
 }

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { LoadingState, Spinner } from '@/components/ui/LoadingState'
 import { Stepper } from '@/components/ui/Stepper'
-import { ToolPage, Panel, PanelHeader } from '@/components/layout/ToolPage'
+import { PageShell, Panel, PanelHeader } from '@/components/layout/PageShell'
 import { SparkleIcon } from '@/components/ui/icons'
 import { aiApi } from '@/api/ai.api'
 import { resumesApi } from '@/api/resumes.api'
@@ -133,7 +133,8 @@ export function CustomizeForJobPage() {
   if (loading) return <LoadingState label="Loading your resumes…" fullscreen />
 
   return (
-    <ToolPage
+    <PageShell
+      width="default"
       back={back}
       title="Customize for a job"
       description="ResumeAI rewrites what you already have to match the role. It never invents experience."
@@ -158,7 +159,7 @@ export function CustomizeForJobPage() {
         <>
           <Stepper variant="compact" steps={STEPS} current={step} />
 
-          <div className="mt-6">
+          <div className="mt-5">
             {/* ── Step 1: choose a resume ── */}
             {step === 0 && (
               <Panel>
@@ -288,6 +289,6 @@ export function CustomizeForJobPage() {
           </div>
         </>
       )}
-    </ToolPage>
+    </PageShell>
   )
 }

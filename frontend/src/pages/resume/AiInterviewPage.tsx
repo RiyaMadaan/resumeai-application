@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ToolPage } from '@/components/layout/ToolPage'
+import { PageShell } from '@/components/layout/PageShell'
 import { useReturnTo } from '@/lib/returnTo'
-import { Container } from '@/components/ui/Container'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { LoadingState, Spinner } from '@/components/ui/LoadingState'
@@ -318,7 +317,7 @@ export function AiInterviewPage() {
   /* ── Review ── */
   if (stage === 'review' && draft) {
     return (
-      <Container className="max-w-3xl py-8 sm:py-10">
+      <PageShell width="narrow">
         <h1 className="text-2xl font-bold tracking-tight text-ink">Your resume is ready</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Everything here came from your answers. You can edit all of it after applying.
@@ -369,18 +368,19 @@ export function AiInterviewPage() {
             Back to interview
           </Button>
         </div>
-      </Container>
+      </PageShell>
     )
   }
 
   /* ── Chat ── */
   return (
-    <ToolPage
-      width="lg"
+    <PageShell
+      width="default"
+      className="lg:max-w-5xl"
       back={back}
       title={resumeId ? 'Continue resume interview' : 'Resume interview'}
       description="Practice real interview questions and answer in your own words — I'll turn it into a resume."
-      aside={
+      actions={
         <Button variant="ghost" size="sm" onClick={discard} disabled={thinking || creating}>
           Cancel
         </Button>
@@ -487,7 +487,7 @@ export function AiInterviewPage() {
           </div>
         </div>
       )}
-    </ToolPage>
+    </PageShell>
   )
 }
 

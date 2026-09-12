@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useReturnTo } from '@/lib/returnTo'
-import { ToolPage } from '@/components/layout/ToolPage'
+import { PageShell } from '@/components/layout/PageShell'
 import { Button } from '@/components/ui/Button'
 import { Input, Textarea } from '@/components/ui/Input'
 import { LoadingState } from '@/components/ui/LoadingState'
@@ -216,11 +216,11 @@ export function CoverLetterEditorPage() {
 
   if (error && !letter) {
     return (
-      <ToolPage title="Cover letter" back={back}>
+      <PageShell title="Cover letter" back={back}>
         <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
           {error}
         </div>
-      </ToolPage>
+      </PageShell>
     )
   }
 
@@ -360,12 +360,12 @@ export function CoverLetterEditorPage() {
   )
 
   return (
-    <ToolPage
-      width="xl"
+    <PageShell
+      width="default"
       back={back}
       title={title.trim() || 'Cover letter'}
       description="Edit it by hand or refine it with AI — your changes save automatically."
-      aside={
+      actions={
         <span className="text-xs text-ink-subtle" role="status">
           {saving ? 'Saving…' : savedAt ? `Saved at ${savedAt}` : ''}
         </span>
@@ -401,6 +401,6 @@ export function CoverLetterEditorPage() {
           <div className="lg:sticky lg:top-24">{preview}</div>
         </div>
       </div>
-    </ToolPage>
+    </PageShell>
   )
 }

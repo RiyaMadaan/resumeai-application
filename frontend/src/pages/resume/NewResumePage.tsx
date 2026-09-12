@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
-import { ToolPage } from '@/components/layout/ToolPage'
+import { PageShell } from '@/components/layout/PageShell'
 import { Input } from '@/components/ui/Input'
 import { Spinner } from '@/components/ui/LoadingState'
 import { aiApi } from '@/api/ai.api'
@@ -113,7 +113,7 @@ export function NewResumePage() {
   }
 
   return (
-    <ToolPage
+    <PageShell
       back={{ to: '/resume/new', label: 'Back' }}
       title="Tell us about your career"
       description="Write it however you like. We'll sort it into the right sections — and never add anything you didn't say."
@@ -194,6 +194,6 @@ export function NewResumePage() {
           </Button>
         </div>
       </form>
-    </ToolPage>
+    </PageShell>
   )
 }
