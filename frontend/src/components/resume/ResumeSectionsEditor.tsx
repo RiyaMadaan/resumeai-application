@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Input, Textarea } from '@/components/ui/Input'
 import { Collapsible } from '@/components/ui/Collapsible'
+import { AddEntryButton, EntryCard } from '@/components/resume/EntryCard'
 import type { Education, Experience, PersonalInfo, Project } from '@/types/resume'
 
 /**
@@ -81,32 +82,6 @@ function dateRange(startDate: string, endDate: string, current?: boolean): strin
 /** Two fields side by side on wider screens. */
 function FieldRow({ children }: { children: ReactNode }) {
   return <div className="grid gap-3 sm:grid-cols-2">{children}</div>
-}
-
-/** The "+ Add …" control at the foot of a repeatable list. */
-function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="w-full rounded-lg border border-dashed border-slate-300 px-4 py-2.5 text-sm font-medium text-ink-muted transition-colors hover:border-brand-300 hover:text-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
-    >
-      + {label}
-    </button>
-  )
-}
-
-/** The remove control inside an expanded entry. */
-function RemoveButton({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded-md px-2 py-1 text-xs font-medium text-ink-subtle transition-colors hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-    >
-      {label}
-    </button>
-  )
 }
 
 /**
@@ -238,16 +213,13 @@ export function ResumeSectionsEditor({
       >
         <div className="space-y-3">
           {experience.map((entry, index) => (
-            <Collapsible
+            <EntryCard
               key={index}
-              variant="row"
-              className="bg-slate-50/60"
               title={entry.role || 'Untitled role'}
-              summary={
-                [entry.company, dateRange(entry.startDate, entry.endDate, entry.current)]
-                  .filter(Boolean)
-                  .join(' · ') || 'No company or dates yet'
-              }
+              subtitle={entry.company || 'No company yet'}
+              meta={dateRange(entry.startDate, entry.endDate, entry.current) || 'No dates yet'}
+              removeLabel={`Actions for ${entry.role || 'this position'}`}
+              onRemove={() => onChange({ experience: experience.filter((_, i) => i !== index) })}
             >
               <div className="space-y-3">
                 <FieldRow>
@@ -333,18 +305,10 @@ export function ResumeSectionsEditor({
                   rows={4}
                   hint="One bullet point per line."
                 />
-                <div className="flex justify-end">
-                  <RemoveButton
-                    label="Remove position"
-                    onClick={() =>
-                      onChange({ experience: experience.filter((_, i) => i !== index) })
-                    }
-                  />
-                </div>
               </div>
-            </Collapsible>
+            </EntryCard>
           ))}
-          <AddButton
+          <AddEntryButton
             label="Add experience"
             onClick={() => onChange({ experience: [...experience, { ...emptyExperience }] })}
           />
@@ -362,16 +326,13 @@ export function ResumeSectionsEditor({
       >
         <div className="space-y-3">
           {projects.map((entry, index) => (
-            <Collapsible
+            <EntryCard
               key={index}
-              variant="row"
-              className="bg-slate-50/60"
               title={entry.name || 'Untitled project'}
-              summary={
-                entry.technologies.length > 0
-                  ? entry.technologies.join(', ')
-                  : entry.description || 'No description yet'
-              }
+              subtitle={entry.technologies.length > 0 ? entry.technologies.join(', ') : undefined}
+              meta={entry.description || undefined}
+              removeLabel={`Actions for ${entry.name || 'this project'}`}
+              onRemove={() => onChange({ projects: projects.filter((_, i) => i !== index) })}
             >
               <div className="space-y-3">
                 <Input
@@ -414,16 +375,10 @@ export function ResumeSectionsEditor({
                   }
                   placeholder="github.com/you/project"
                 />
-                <div className="flex justify-end">
-                  <RemoveButton
-                    label="Remove project"
-                    onClick={() => onChange({ projects: projects.filter((_, i) => i !== index) })}
-                  />
-                </div>
               </div>
-            </Collapsible>
+            </EntryCard>
           ))}
-          <AddButton
+          <AddEntryButton
             label="Add project"
             onClick={() => onChange({ projects: [...projects, { ...emptyProject }] })}
           />
@@ -441,16 +396,13 @@ export function ResumeSectionsEditor({
       >
         <div className="space-y-3">
           {education.map((entry, index) => (
-            <Collapsible
+            <EntryCard
               key={index}
-              variant="row"
-              className="bg-slate-50/60"
               title={entry.degree || entry.institution || 'Untitled qualification'}
-              summary={
-                [entry.institution, dateRange(entry.startDate, entry.endDate)]
-                  .filter(Boolean)
-                  .join(' · ') || 'No institution or dates yet'
-              }
+              subtitle={entry.institution || 'No institution yet'}
+              meta={dateRange(entry.startDate, entry.endDate) || 'No dates yet'}
+              removeLabel={`Actions for ${entry.degree || 'this qualification'}`}
+              onRemove={() => onChange({ education: education.filter((_, i) => i !== index) })}
             >
               <div className="space-y-3">
                 <Input
@@ -504,16 +456,10 @@ export function ResumeSectionsEditor({
                     placeholder="2023"
                   />
                 </FieldRow>
-                <div className="flex justify-end">
-                  <RemoveButton
-                    label="Remove entry"
-                    onClick={() => onChange({ education: education.filter((_, i) => i !== index) })}
-                  />
-                </div>
               </div>
-            </Collapsible>
+            </EntryCard>
           ))}
-          <AddButton
+          <AddEntryButton
             label="Add education"
             onClick={() => onChange({ education: [...education, { ...emptyEducation }] })}
           />
