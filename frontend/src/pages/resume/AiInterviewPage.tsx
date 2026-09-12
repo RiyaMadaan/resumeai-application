@@ -318,7 +318,7 @@ export function AiInterviewPage() {
   /* ── Review ── */
   if (stage === 'review' && draft) {
     return (
-      <Container className="max-w-3xl py-8 sm:py-12">
+      <Container className="max-w-3xl py-8 sm:py-10">
         <h1 className="text-2xl font-bold tracking-tight text-ink">Your resume is ready</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Everything here came from your answers. You can edit all of it after applying.
@@ -376,6 +376,7 @@ export function AiInterviewPage() {
   /* ── Chat ── */
   return (
     <ToolPage
+      width="lg"
       back={back}
       title={resumeId ? 'Continue resume interview' : 'Resume interview'}
       description="Practice real interview questions and answer in your own words — I'll turn it into a resume."
@@ -403,7 +404,7 @@ export function AiInterviewPage() {
         </div>
 
         {/* Transcript */}
-        <div className="max-h-[52vh] min-h-[18rem] space-y-3 overflow-y-auto bg-slate-50/60 p-4">
+        <div className="max-h-[58vh] min-h-[22rem] space-y-3 overflow-y-auto bg-slate-50/60 p-4 sm:p-5">
           {messages.map((message, i) => (
             <Bubble key={i} message={message} />
           ))}

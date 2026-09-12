@@ -36,10 +36,12 @@ export function ToolPage({
     <div>
       <div
         className={cn(
-          'mx-auto w-full px-5 py-8 sm:px-6 sm:py-10',
+          'mx-auto w-full px-5 py-8 sm:px-6 sm:py-10 lg:px-8',
           width === 'md' && 'max-w-3xl',
           width === 'lg' && 'max-w-5xl',
-          width === 'xl' && 'max-w-7xl',
+          // The same token Container uses, so a wide tool page and a list page
+          // line up rather than sitting at two nearly-equal widths.
+          width === 'xl' && 'max-w-container',
         )}
       >
         {back && (

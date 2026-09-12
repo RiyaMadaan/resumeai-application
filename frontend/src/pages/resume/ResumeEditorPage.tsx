@@ -488,8 +488,10 @@ export function ResumeEditorPage() {
                 className={
                   'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-left text-[13.5px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ' +
                   (active
-                    ? 'bg-brand-50 font-semibold text-brand-700'
-                    : 'font-medium text-ink-muted hover:bg-slate-100 hover:text-ink')
+                    // A white chip on the tinted ground — present, but not the
+                    // filled purple pill the application rail uses.
+                    ? 'bg-white font-semibold text-brand-700 shadow-sm ring-1 ring-slate-200'
+                    : 'font-medium text-ink-muted hover:bg-white/70 hover:text-ink')
                 }
               >
                 <entry.Icon width={16} height={16} />
@@ -548,7 +550,7 @@ export function ResumeEditorPage() {
         {/* AI tools. Set apart rather than styled louder — they act on the
             resume rather than being part of it, so they read as a different
             kind of thing without competing with the content sections. */}
-        <div className="mt-1 rounded-xl bg-slate-50 p-2 pt-1.5 ring-1 ring-slate-100">
+        <div className="mt-1 rounded-xl border border-slate-200/80 p-2 pt-1.5">
           <p className="flex items-center gap-1.5 px-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-subtle">
             <SparkleIcon width={12} height={12} className="text-brand-500" />
             AI tools
@@ -564,8 +566,8 @@ export function ResumeEditorPage() {
                   className={
                     'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-left text-[13.5px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:opacity-50 ' +
                     (tool.active
-                      ? 'bg-brand-50 font-semibold text-brand-700'
-                      : 'text-ink-muted hover:bg-slate-100 hover:text-ink')
+                      ? 'bg-white font-semibold text-brand-700 shadow-sm ring-1 ring-slate-200'
+                      : 'text-ink-muted hover:bg-white/70 hover:text-ink')
                   }
                 >
                   <tool.Icon width={16} height={16} />
@@ -641,7 +643,7 @@ export function ResumeEditorPage() {
   }
 
   const sectionEditor = (
-    <div className="mx-auto w-full max-w-2xl px-5 py-6 sm:px-8 sm:py-8">
+    <div className="mx-auto w-full max-w-2xl px-5 py-6 sm:px-7">
       <header className="mb-6">
         <h2 className="text-xl font-semibold tracking-tight text-ink">{current.title}</h2>
         <p className="mt-1 text-sm leading-relaxed text-ink-muted">{current.description}</p>
@@ -659,7 +661,7 @@ export function ResumeEditorPage() {
 
   const preview = (
     <div className="flex flex-col lg:h-full lg:min-h-0">
-      <div className="flex flex-shrink-0 items-center justify-between gap-3 border-b border-slate-200/70 px-5 py-2.5">
+      <div className="flex flex-shrink-0 items-center justify-between gap-3 px-1 pb-2.5">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-subtle">
           Live preview
         </p>
@@ -683,7 +685,7 @@ export function ResumeEditorPage() {
           a sheet of paper rather than a blank panel. A permanent scrollbar, not
           `auto`: a bar that came and went would change the width and rescale
           the page on every toggle. */}
-      <div className="px-5 py-6 [scrollbar-gutter:stable] lg:min-h-0 lg:flex-1 lg:overflow-y-scroll lg:px-8 lg:py-8">
+      <div className="rounded-xl bg-slate-100/80 px-5 py-6 [scrollbar-gutter:stable] lg:min-h-0 lg:flex-1 lg:overflow-y-scroll lg:px-6 lg:py-6">
         <div className="mx-auto w-full" style={{ maxWidth: 860 }}>
           {previewPaper}
         </div>
@@ -902,22 +904,26 @@ export function ResumeEditorPage() {
 
       </div>
 
-      {/* Sidebar · editor · preview. The preview takes every pixel the other
-          two don't need, so it grows with the window instead of staying a
-          fixed-width card. */}
-      <div className="min-h-0 flex-1 lg:grid lg:grid-cols-[12rem_minmax(22rem,30rem)_minmax(0,1fr)] lg:overflow-hidden">
-        <aside className="border-b border-slate-200 bg-white px-3 py-3 lg:h-full lg:overflow-y-auto lg:border-b-0 lg:border-r lg:py-5">
+      {/* Section nav · form · preview.
+ 
+          These sit *on* the page rather than being more chrome. The global
+          rail is the application's navigation — white, bordered, with the
+          brand and the account on it. This column only moves around inside one
+          document, so it is narrower, sits directly on the page ground with no
+          border or fill of its own, and marks its active row differently. The
+          form is a white panel, which makes it read as content rather than a
+          third navigation surface. */}
+      <div className="min-h-0 flex-1 bg-slate-50 lg:grid lg:grid-cols-[10.5rem_minmax(20rem,28rem)_minmax(0,1fr)] lg:gap-4 lg:overflow-hidden lg:p-4">
+        <aside className="border-b border-slate-200 bg-white px-3 py-3 lg:h-full lg:overflow-y-auto lg:border-b-0 lg:bg-transparent lg:px-0 lg:py-1">
           {sectionNav}
         </aside>
 
-        <div className="bg-white lg:h-full lg:overflow-y-auto lg:border-r lg:border-slate-200">
+        <div className="lg:h-full lg:overflow-y-auto lg:rounded-xl lg:border lg:border-slate-200 lg:bg-white">
           {sectionEditor}
         </div>
 
         {/* The workspace the paper sits on. */}
-        <div className="bg-slate-100/70 lg:h-full lg:min-h-0 lg:overflow-hidden">
-          {preview}
-        </div>
+        <div className="lg:h-full lg:min-h-0 lg:overflow-hidden">{preview}</div>
       </div>
 
       {/* ATS report — read-only */}

@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Container } from '@/components/ui/Container'
 import { Button } from '@/components/ui/Button'
 import { TemplateGallery } from '@/components/resume/TemplateGallery'
 import { PageHeader } from '@/components/layout/ToolPage'
@@ -25,8 +24,10 @@ export function TemplatesPage() {
     setPreferredTemplate(id)
   }
 
+  // A gallery earns the full content width; a reading column would shrink the
+  // thumbnails that are the point of the page.
   return (
-    <Container className="py-8 sm:py-12">
+    <div className="mx-auto w-full max-w-[1600px] px-5 py-8 sm:px-6 sm:py-10 lg:px-8">
       <PageHeader
         title="Templates"
         description={`${TEMPLATES.length} designs, all using your own content. Pick one to start with — you can change it at any time while editing.`}
@@ -36,6 +37,6 @@ export function TemplatesPage() {
       />
 
       <TemplateGallery selectedId={selected} onSelect={handleSelect} className="mt-8" />
-    </Container>
+    </div>
   )
 }
