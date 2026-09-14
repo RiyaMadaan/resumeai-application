@@ -2,6 +2,17 @@ import { useId } from 'react'
 import { getTemplate } from '@/templates/catalog'
 import type { Resume } from '@/types/resume'
 
+/** "2 days ago", matching how the dashboard dates a resume. */
+function updatedLabel(iso: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  const days = Math.floor((Date.now() - date.getTime()) / 86_400_000)
+  if (days <= 0) return 'today'
+  if (days === 1) return 'yesterday'
+  if (days < 30) return `${days} days ago`
+  return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
 /**
  * ResumeSelector — the one way to choose which resume a tool acts on.
  *
@@ -32,6 +43,7 @@ export function ResumeSelector({
   disabled?: boolean
 }) {
   const id = useId()
+  const chosen = resumes.find((r) => r._id === value) ?? null
 
   return (
     <div className="w-full">
@@ -49,9 +61,11 @@ export function ResumeSelector({
           <option value="">Select a resume</option>
           {resumes.map((resume) => (
             <option key={resume._id} value={resume._id}>
-              {/* Name plus template: enough to tell two "Untitled Resume"s
-                  apart without the option becoming a paragraph. */}
-              {resume.title || 'Untitled Resume'} · {getTemplate(resume.template).name}
+              {/* Name, template and when it changed: enough to tell two
+                  "Untitled Resume"s apart without the option becoming a
+                  paragraph. A native option can only hold one line of text. */}
+              {resume.title || 'Untitled Resume'} · {getTemplate(resume.template).name} ·{' '}
+              {updatedLabel(resume.updatedAt)}
             </option>
           ))}
         </select>
@@ -64,7 +78,14 @@ export function ResumeSelector({
           </svg>
         </span>
       </div>
-      {hint && <p className="mt-1.5 text-xs text-ink-subtle">{hint}</p>}
+      {chosen ? (
+        <p className="mt-1.5 truncate text-xs text-ink-muted">
+          Using <span className="font-semibold text-ink">{chosen.title || 'Untitled Resume'}</span>{' '}
+          · {getTemplate(chosen.template).name} · updated {updatedLabel(chosen.updatedAt)}
+        </p>
+      ) : (
+        hint && <p className="mt-1.5 text-xs text-ink-subtle">{hint}</p>
+      )}
     </div>
   )
 }

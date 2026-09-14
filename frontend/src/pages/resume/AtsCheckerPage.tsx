@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageShell, Panel } from '@/components/layout/PageShell'
 import { Button } from '@/components/ui/Button'
+import { Textarea } from '@/components/ui/Input'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { AtsScoreModal } from '@/components/resume/AtsScoreModal'
 import { NoResumesYet, ResumeSelector } from '@/components/resume/ResumeSelector'
@@ -24,6 +25,7 @@ export function AtsCheckerPage() {
 
   const [resumes, setResumes] = useState<Resume[] | null>(null)
   const [selectedId, setSelectedId] = useState('')
+  const [jobDescription, setJobDescription] = useState('')
   const [error, setError] = useState('')
   const [reportOpen, setReportOpen] = useState(false)
 
@@ -75,6 +77,20 @@ export function AtsCheckerPage() {
             </p>
           )}
 
+          {/* Optional. With a posting the score is targeted at that role;
+              without one it measures general ATS readiness. */}
+          <div className="mt-5">
+            <Textarea
+              label="Job description"
+              value={jobDescription}
+              onChange={(e) => setJobDescription(e.target.value)}
+              rows={6}
+              placeholder="Paste the job description here…"
+              hint="Optional — add one to score against a specific role instead of general ATS readiness."
+              disabled={!selectedId}
+            />
+          </div>
+
           <div className="mt-5 flex items-center gap-3 border-t border-slate-100 pt-4">
             <Button onClick={() => setReportOpen(true)} disabled={!selectedId || reportOpen}>
               {reportOpen ? 'Checking…' : 'Check ATS'}
@@ -94,6 +110,7 @@ export function AtsCheckerPage() {
           resumeId={selected._id}
           resumeTitle={selected.title}
           resume={selected}
+          jobDescription={jobDescription}
           onAnalyzed={(result) =>
             setResumes((current) =>
               (current ?? []).map((r) =>

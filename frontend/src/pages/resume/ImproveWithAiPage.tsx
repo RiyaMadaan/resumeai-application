@@ -4,6 +4,7 @@ import { PageShell, Panel } from '@/components/layout/PageShell'
 import { Button } from '@/components/ui/Button'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { AiToolsPanel } from '@/components/resume/AiToolsPanel'
+import { PanelHeader } from '@/components/layout/PageShell'
 import { NoResumesYet, ResumeSelector } from '@/components/resume/ResumeSelector'
 import { resumesApi } from '@/api/resumes.api'
 import { getApiErrorMessage } from '@/api/client'
@@ -113,6 +114,10 @@ export function ImproveWithAiPage() {
               <LoadingState label="Loading that resume…" />
             ) : (
               <>
+                <PanelHeader
+                  title="What would you like to improve?"
+                  description="Pick one to fill it in, or describe the change yourself."
+                />
                 <AiToolsPanel
                   resumeId={selected._id}
                   resume={selected}

@@ -25,6 +25,13 @@ interface AtsScoreModalProps {
    * refetching.
    */
   onAnalyzed?: (result: AtsScoreResult) => void
+  /**
+   * An optional posting to judge the resume against. With one, the analysis is
+   * targeted at that role; without it the resume is scored on general ATS
+   * readiness. The server has always accepted this — nothing in the UI was
+   * passing it.
+   */
+  jobDescription?: string
 }
 
 /** The category rows, in the order they're displayed. */
@@ -234,6 +241,7 @@ export function AtsScoreModal({
   resumeTitle,
   resume,
   onAnalyzed,
+  jobDescription,
 }: AtsScoreModalProps) {
   const [result, setResult] = useState<AtsScoreResult | null>(null)
   const [loading, setLoading] = useState(false)
@@ -261,6 +269,13 @@ export function AtsScoreModal({
     resumeRef.current = resume
   }, [resume])
 
+  // Read at request time for the same reason as the resume: `analyze` must not
+  // depend on it, or editing the posting would re-run the analysis.
+  const jobDescriptionRef = useRef(jobDescription)
+  useEffect(() => {
+    jobDescriptionRef.current = jobDescription
+  }, [jobDescription])
+
   /**
    * Guards against a second analysis while one is already in flight.
    *
@@ -279,7 +294,11 @@ export function AtsScoreModal({
     setLoading(true)
     setError('')
     try {
-      const analysis = await aiApi.atsScore(resumeId, resumeRef.current)
+      const analysis = await aiApi.atsScore(
+        resumeId,
+        resumeRef.current,
+        jobDescriptionRef.current?.trim() || undefined,
+      )
       setResult(analysis)
       onAnalyzedRef.current?.(analysis)
     } catch (err) {
