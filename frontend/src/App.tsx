@@ -8,6 +8,8 @@ import { CreateResumeChoicePage } from '@/pages/resume/CreateResumeChoicePage'
 import { NewResumePage } from '@/pages/resume/NewResumePage'
 import { TemplatesPage } from '@/pages/resume/TemplatesPage'
 import { BuilderPage } from '@/pages/resume/BuilderPage'
+import { ImproveWithAiPage } from '@/pages/resume/ImproveWithAiPage'
+import { AtsCheckerPage } from '@/pages/resume/AtsCheckerPage'
 import { CoverLettersPage } from '@/pages/coverLetter/CoverLettersPage'
 import { NewCoverLetterPage } from '@/pages/coverLetter/NewCoverLetterPage'
 import { CoverLetterEditorPage } from '@/pages/coverLetter/CoverLetterEditorPage'
@@ -31,6 +33,8 @@ import { ProtectedRoute } from '@/routes/ProtectedRoute'
  *   /resume/new/builder    step-by-step builder        (protected)
  *   /resume/builder/:id    continue a manual build     (protected)
  *   /cover-letters         AI cover letters            (protected)
+ *   /improve               Ask AI, pick a resume       (protected)
+ *   /ats                   ATS report, pick a resume   (protected)
  *   /resume/new/upload     import an existing PDF/DOCX (protected)
  *   /resume/new/interview  build a resume by conversation (protected)
  *   /customize             job description → tailored resume (protected)
@@ -64,6 +68,8 @@ function App() {
           <Route path="/cover-letters/new" element={<NewCoverLetterPage />} />
           <Route path="/cover-letters/:id" element={<CoverLetterEditorPage />} />
           <Route path="/customize" element={<CustomizeForJobPage />} />
+          <Route path="/improve" element={<ImproveWithAiPage />} />
+          <Route path="/ats" element={<AtsCheckerPage />} />
           <Route path="/resume/:id" element={<ResumeEditorPage />} />
         </Route>
       </Route>

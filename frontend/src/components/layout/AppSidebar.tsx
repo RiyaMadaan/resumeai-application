@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/cn'
 import { Logo } from '@/components/ui/Logo'
@@ -14,7 +13,6 @@ import {
   UserIcon,
 } from '@/components/ui/icons'
 import { useAuth } from '@/context/AuthContext'
-import { resumesApi } from '@/api/resumes.api'
 
 /**
  * AppSidebar — the application's only vertical navigation.
@@ -29,14 +27,9 @@ interface NavEntry {
   label: string
   Icon: (props: { width?: number; height?: number }) => React.ReactElement
   /** A route, for tools that stand on their own. */
-  to?: string
+  to: string
   /** Match nested paths too, e.g. /cover-letters/:id. */
   nested?: boolean
-  /**
-   * A tool that needs an open resume. Opening it from here picks the most
-   * recently updated resume and opens the editor with that panel showing.
-   */
-  resumeTool?: 'ats' | 'improve'
 }
 
 const GROUPS: { label: string; entries: NavEntry[] }[] = [
@@ -51,8 +44,8 @@ const GROUPS: { label: string; entries: NavEntry[] }[] = [
     entries: [
       { to: '/customize', label: 'Customize for a job', Icon: TargetIcon },
       { to: '/resume/new/interview', label: 'Resume interview', Icon: ChatIcon },
-      { label: 'ATS checker', Icon: GaugeIcon, resumeTool: 'ats' },
-      { label: 'Improve with AI', Icon: SparkleIcon, resumeTool: 'improve' },
+      { to: '/ats', label: 'ATS checker', Icon: GaugeIcon },
+      { to: '/improve', label: 'Improve with AI', Icon: SparkleIcon },
       { to: '/cover-letters/new', label: 'Cover letter', Icon: MailIcon },
     ],
   },
@@ -66,32 +59,8 @@ const ROW_ACTIVE = 'bg-brand-50 font-semibold text-brand-700'
 export function AppSidebar() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const [opening, setOpening] = useState<string | null>(null)
 
   const initial = user?.name?.trim()?.charAt(0)?.toUpperCase() ?? 'U'
-
-  /**
-   * Open a resume-scoped tool from the global rail.
-   *
-   * These two act on an open resume, so there is nowhere to send someone who
-   * hasn't picked one. Rather than inventing a chooser screen, this opens the
-   * most recently updated resume with the tool showing — and falls back to the
-   * create screen when there are no resumes yet. Uses the existing list
-   * endpoint; nothing new on the server.
-   */
-  const openResumeTool = async (tool: 'ats' | 'improve') => {
-    if (opening) return
-    setOpening(tool)
-    try {
-      const resumes = await resumesApi.list()
-      const target = resumes[0]
-      navigate(target ? `/resume/${target._id}?tool=${tool}` : '/resume/new')
-    } catch {
-      navigate('/dashboard')
-    } finally {
-      setOpening(null)
-    }
-  }
 
   return (
     <aside className="flex h-full w-full flex-col border-r border-slate-200 bg-white">
@@ -112,28 +81,14 @@ export function AppSidebar() {
             <ul className="space-y-px">
               {group.entries.map((entry) => (
                 <li key={entry.label}>
-                  {entry.to ? (
-                    <NavLink
-                      to={entry.to}
-                      end={!entry.nested}
-                      className={({ isActive }) => cn(ROW, isActive ? ROW_ACTIVE : ROW_IDLE)}
-                    >
-                      <entry.Icon width={16} height={16} />
-                      <span className="truncate">{entry.label}</span>
-                    </NavLink>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => void openResumeTool(entry.resumeTool!)}
-                      disabled={!!opening}
-                      className={cn(ROW, ROW_IDLE, 'disabled:opacity-60')}
-                    >
-                      <entry.Icon width={16} height={16} />
-                      <span className="truncate">
-                        {opening === entry.resumeTool ? 'Opening…' : entry.label}
-                      </span>
-                    </button>
-                  )}
+                  <NavLink
+                    to={entry.to}
+                    end={!entry.nested}
+                    className={({ isActive }) => cn(ROW, isActive ? ROW_ACTIVE : ROW_IDLE)}
+                  >
+                    <entry.Icon width={16} height={16} />
+                    <span className="truncate">{entry.label}</span>
+                  </NavLink>
                 </li>
               ))}
             </ul>

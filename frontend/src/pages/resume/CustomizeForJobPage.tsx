@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useReturnTo } from '@/lib/returnTo'
-import { getTemplate } from '@/templates/catalog'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { LoadingState, Spinner } from '@/components/ui/LoadingState'
 import { Stepper } from '@/components/ui/Stepper'
 import { PageShell, Panel, PanelHeader } from '@/components/layout/PageShell'
+import { ResumeSelector } from '@/components/resume/ResumeSelector'
 import { SparkleIcon } from '@/components/ui/icons'
 import { aiApi } from '@/api/ai.api'
 import { resumesApi } from '@/api/resumes.api'
@@ -25,13 +25,6 @@ const PROGRESS_MESSAGES = [
   'Matching it against your experience…',
   'Choosing what to emphasise…',
 ]
-
-/** Format an ISO date into a short "Updated" label. */
-function formatUpdated(iso: string): string {
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return ''
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-}
 
 /**
  * CustomizeForJobPage — "job description → tailored resume", as a short guided
@@ -65,9 +58,10 @@ export function CustomizeForJobPage() {
       .then((data) => {
         if (!active) return
         setResumes(data)
-        setSelectedId((current) =>
-          current && data.some((r) => r._id === current) ? current : (data[0]?._id ?? ''),
-        )
+        // Only ever adopt a resume the caller named. Defaulting to whichever
+        // is first would let someone tailor the wrong document without being
+        // asked which one they meant.
+        setSelectedId((current) => (current && data.some((r) => r._id === current) ? current : ''))
         // Arriving from a specific resume skips straight to the posting.
         if (searchParams.get('resume') && data.some((r) => r._id === searchParams.get('resume'))) {
           setStep(1)
@@ -163,44 +157,13 @@ export function CustomizeForJobPage() {
             {/* ── Step 1: choose a resume ── */}
             {step === 0 && (
               <Panel>
-                <PanelHeader
-                  title="Which resume do you want to tailor?"
-                  description="Its content is the only thing the tailoring can draw on."
+                <PanelHeader title="Step 1 — Select your resume" />
+                <ResumeSelector
+                  resumes={resumes}
+                  value={selectedId}
+                  onChange={setSelectedId}
+                  hint="Its content is the only thing the tailoring can draw on."
                 />
-                <div className="space-y-2">
-                  {resumes.map((resume) => {
-                    const selected = resume._id === selectedId
-                    return (
-                      <label
-                        key={resume._id}
-                        className={
-                          'flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition-colors ' +
-                          (selected
-                            ? 'border-brand-400 bg-brand-50'
-                            : 'border-slate-200 bg-white hover:border-brand-200')
-                        }
-                      >
-                        <input
-                          type="radio"
-                          name="resume"
-                          value={resume._id}
-                          checked={selected}
-                          onChange={() => setSelectedId(resume._id)}
-                          className="h-4 w-4 shrink-0 accent-brand-600"
-                        />
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-semibold text-ink">
-                            {resume.title}
-                          </span>
-                          <span className="block text-xs text-ink-subtle">
-                            Updated {formatUpdated(resume.updatedAt)} ·{' '}
-                            <span>{getTemplate(resume.template).name}</span>
-                          </span>
-                        </span>
-                      </label>
-                    )
-                  })}
-                </div>
 
                 <div className="mt-5 flex gap-2">
                   <Button onClick={() => setStep(1)} disabled={!selectedId}>
@@ -217,7 +180,7 @@ export function CustomizeForJobPage() {
             {step === 1 && (
               <Panel>
                 <label htmlFor="job-description" className="text-sm font-semibold text-ink">
-                  Paste the job description
+                  Step 2 — Add the job description
                 </label>
                 <p id="job-description-hint" className="mt-1 text-xs text-ink-muted">
                   Paste the job description and ResumeAI will identify relevant skills, keywords,

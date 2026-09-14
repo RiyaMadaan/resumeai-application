@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { Input, Textarea } from '@/components/ui/Input'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { ResumeSelector } from '@/components/resume/ResumeSelector'
 import { PageShell, Panel, PanelHeader } from '@/components/layout/PageShell'
 import { SparkleIcon } from '@/components/ui/icons'
 import { resumesApi } from '@/api/resumes.api'
@@ -46,8 +47,8 @@ export function NewCoverLetterPage() {
       .then((list) => {
         if (!active) return
         setResumes(list)
-        // Default to the most recently updated resume when none was passed in.
-        setResumeId((current) => current || list[0]?._id || '')
+        // Keep a resume the caller named; never adopt one the user didn't pick.
+        setResumeId((current) => (current && list.some((r) => r._id === current) ? current : ''))
       })
       .catch((err) => active && setError(getApiErrorMessage(err, 'Could not load your resumes')))
     return () => {
@@ -114,40 +115,13 @@ export function NewCoverLetterPage() {
         <div className="space-y-4">
           {/* Resume */}
           <Panel>
-            <PanelHeader
-              title="Which resume?"
-              description="Its content is the only thing the letter can draw on."
+            <PanelHeader title="Which resume?" />
+            <ResumeSelector
+              resumes={resumes ?? []}
+              value={resumeId}
+              onChange={setResumeId}
+              hint="Its content is the only thing the letter can draw on."
             />
-            <div className="space-y-2">
-              {(resumes ?? []).map((resume) => (
-                <label
-                  key={resume._id}
-                  className={
-                    'flex cursor-pointer items-center gap-3 rounded-lg border px-3.5 py-2.5 transition-colors ' +
-                    (resumeId === resume._id
-                      ? 'border-brand-400 bg-brand-50'
-                      : 'border-slate-200 hover:border-brand-200')
-                  }
-                >
-                  <input
-                    type="radio"
-                    name="resume"
-                    value={resume._id}
-                    checked={resumeId === resume._id}
-                    onChange={() => setResumeId(resume._id)}
-                    className="h-4 w-4 accent-brand-600"
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium text-ink">
-                      {resume.title}
-                    </span>
-                    <span className="block truncate text-xs text-ink-subtle">
-                      {resume.personalInfo?.fullName || 'No name yet'}
-                    </span>
-                  </span>
-                </label>
-              ))}
-            </div>
           </Panel>
 
           {/* Target */}
