@@ -1,35 +1,54 @@
 import { useNavigate } from 'react-router-dom'
-import { Button } from '@/components/ui/Button'
 import { PageShell } from '@/components/layout/PageShell'
 import { TemplateThumbnail } from '@/templates/TemplateThumbnail'
 import { getTemplate } from '@/templates/catalog'
 import { getPreferredTemplate } from '@/lib/preferredTemplate'
-import { ChatIcon, LayoutIcon, PencilIcon, UploadIcon } from '@/components/ui/icons'
-import type { ReactNode } from 'react'
+import { ChatIcon, LayoutIcon, PencilIcon, SparkleIcon, UploadIcon } from '@/components/ui/icons'
 
-interface ChoiceProps {
-  icon: ReactNode
+/**
+ * One creation route.
+ *
+ * Deliberately a plain row: an icon, a title, a line, and an arrow. These are
+ * choices to make once, not dashboard widgets, so nothing here needs a shadow
+ * or a call-to-action of its own — the whole card is the action.
+ */
+function Choice({
+  Icon,
+  title,
+  description,
+  onSelect,
+  tone = 'default',
+}: {
+  Icon: (props: { width?: number; height?: number }) => React.ReactElement
   title: string
   description: string
-  cta: string
   onSelect: () => void
-}
-
-/** One of the two ways to start a resume. */
-function Choice({ icon, title, description, cta, onSelect }: ChoiceProps) {
+  /** `accent` for the routes inside the recommended panel. */
+  tone?: 'default' | 'accent'
+}) {
   return (
     <button
       type="button"
       onClick={onSelect}
-      className="group flex h-full flex-col rounded-xl border border-slate-200 bg-white p-6 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-card focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+      className={
+        'group flex w-full items-center gap-3.5 rounded-lg border px-4 py-3.5 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 ' +
+        (tone === 'accent'
+          ? 'border-brand-200 bg-white hover:border-brand-400'
+          : 'border-slate-200 bg-white hover:border-brand-300 hover:bg-brand-50/30')
+      }
     >
-      <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
-        {icon}
+      <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+        <Icon width={17} height={17} />
       </span>
-      <h2 className="mt-4 text-base font-semibold text-ink">{title}</h2>
-      <p className="mt-1.5 flex-1 text-sm leading-relaxed text-ink-muted">{description}</p>
-      <span className="mt-5 text-sm font-semibold text-brand-700 group-hover:underline">
-        {cta} →
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold text-ink">{title}</span>
+        <span className="block text-xs leading-relaxed text-ink-muted">{description}</span>
+      </span>
+      <span
+        aria-hidden
+        className="flex-shrink-0 text-ink-subtle transition-transform group-hover:translate-x-0.5 group-hover:text-brand-700"
+      >
+        →
       </span>
     </button>
   )
@@ -38,10 +57,14 @@ function Choice({ icon, title, description, cta, onSelect }: ChoiceProps) {
 /**
  * CreateResumeChoicePage — step one of creating a resume.
  *
- * The routes are grouped by who does the writing: the manual builder, where
- * the user fills everything in themselves, and the AI routes, where content is
- * drafted for them. Every route produces the same resume record — the only
- * lasting difference is that a manual resume reopens in its own builder.
+ * Composed around the question actually being asked: how should this resume
+ * get written? The AI routes lead because they are the least work, and the two
+ * of them sit together in one panel rather than competing as separate cards —
+ * they differ only in how you supply the same information. Manual and upload
+ * follow as the alternatives.
+ *
+ * Every route here already existed and produces the same resume record; the
+ * only lasting difference is that a manual resume reopens in its own builder.
  */
 export function CreateResumeChoicePage() {
   const navigate = useNavigate()
@@ -51,84 +74,100 @@ export function CreateResumeChoicePage() {
 
   return (
     <PageShell
-      width="default"
       back={{ to: '/dashboard', label: 'Back to resumes' }}
-      title="How do you want to build your resume?"
-      description="Both routes produce an ordinary resume — you can switch templates, run an ATS check or tailor it to a job either way."
+      title="Create your resume"
+      description="Choose how you'd like to get started."
     >
-
-      {/* The starting template. Changing it here is optional — every resume can
-          switch template later from its editor. */}
-      <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3.5">
-          <div className="w-14 flex-shrink-0 overflow-hidden rounded-md ring-1 ring-slate-200">
+      <div className="space-y-6">
+        {/* Starting template — one compact row. Optional, and changeable later
+            from any resume's editor, so it shouldn't compete with the choice
+            below it. */}
+        <div className="flex items-center gap-3.5 rounded-xl border border-slate-200 bg-white p-3">
+          <div className="w-11 flex-shrink-0 overflow-hidden rounded ring-1 ring-slate-200">
             <TemplateThumbnail spec={template} />
           </div>
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-ink-subtle">
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-subtle">
               Starting template
             </p>
-            <p className="mt-0.5 text-sm font-semibold text-ink">{template.name}</p>
-            <p className="text-xs text-ink-muted">{template.category}</p>
+            <p className="truncate text-sm font-medium text-ink">
+              {template.name}
+              <span className="text-ink-subtle"> · {template.category}</span>
+            </p>
           </div>
+          <button
+            type="button"
+            onClick={() => navigate('/templates')}
+            className="flex-shrink-0 rounded-lg px-2.5 py-1.5 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+          >
+            Change
+          </button>
         </div>
-        <Button variant="secondary" size="sm" onClick={() => navigate('/templates')}>
-          Browse templates
-        </Button>
+
+        <section aria-labelledby="how-heading">
+          <h2 id="how-heading" className="text-base font-semibold tracking-tight text-ink">
+            How would you like to build your resume?
+          </h2>
+
+          {/* AI leads: the two AI routes differ only in how you supply the same
+              information, so they belong in one panel rather than as two cards
+              that look unrelated. */}
+          <div className="mt-3 rounded-xl border border-brand-200 bg-brand-50/40 p-4 sm:p-5">
+            <div className="flex items-start gap-3">
+              <span
+                aria-hidden
+                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-brand-600 text-white"
+              >
+                <SparkleIcon width={17} height={17} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-sm font-semibold text-ink">Build with AI</h3>
+                  <span className="rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                    Recommended
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-ink-muted">
+                  Let ResumeAI do the heavy lifting. You review everything before it's saved.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <Choice
+                Icon={PencilIcon}
+                title="Describe your career"
+                description="Write about yourself in your own words."
+                onSelect={() => navigate('/resume/new/scratch')}
+                tone="accent"
+              />
+              <Choice
+                Icon={ChatIcon}
+                title="AI interview"
+                description="Answer a few questions and we'll write it."
+                onSelect={() => navigate('/resume/new/interview')}
+                tone="accent"
+              />
+            </div>
+          </div>
+
+          {/* The alternatives, at their own weight. */}
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <Choice
+              Icon={LayoutIcon}
+              title="Build manually"
+              description="Nine short steps, with a live preview beside you."
+              onSelect={() => navigate('/resume/new/builder')}
+            />
+            <Choice
+              Icon={UploadIcon}
+              title="Upload a resume"
+              description="Import a PDF or DOCX and make it editable."
+              onSelect={() => navigate('/resume/new/upload')}
+            />
+          </div>
+        </section>
       </div>
-
-      {/* Manual first: it is the one route where nothing is written for you,
-          and the one that reopens in its own builder later. */}
-      <section className="mt-7" aria-labelledby="manual-heading">
-        <h2 id="manual-heading" className="flex items-center gap-2 text-sm font-semibold text-ink">
-          <span aria-hidden>📝</span> Build manually
-        </h2>
-        <p className="mt-0.5 text-sm text-ink-muted">
-          Fill in each section yourself. Reopens in the same step-by-step builder whenever you come
-          back to it.
-        </p>
-        <div className="mt-3 grid gap-4 sm:grid-cols-2">
-          <Choice
-            icon={<LayoutIcon width={20} height={20} />}
-            title="Step-by-step builder"
-            description="Nine short steps with your resume previewing live beside you the whole way."
-            cta="Start building"
-            onSelect={() => navigate('/resume/new/builder')}
-          />
-        </div>
-      </section>
-
-      <section className="mt-8" aria-labelledby="ai-heading">
-        <h2 id="ai-heading" className="flex items-center gap-2 text-sm font-semibold text-ink">
-          <span aria-hidden>✨</span> Build with AI
-        </h2>
-        <p className="mt-0.5 text-sm text-ink-muted">
-          AI structures and improves your content. You review everything before it is saved.
-        </p>
-        <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Choice
-          icon={<PencilIcon width={20} height={20} />}
-          title="Describe your career"
-          description="Write about yourself in your own words and let AI structure it."
-          cta="Continue"
-          onSelect={() => navigate('/resume/new/scratch')}
-        />
-        <Choice
-          icon={<ChatIcon width={20} height={20} />}
-          title="Build with AI"
-          description="Answer a few questions and we'll write it for you."
-          cta="Start interview"
-          onSelect={() => navigate('/resume/new/interview')}
-        />
-        <Choice
-          icon={<UploadIcon width={20} height={20} />}
-          title="Upload existing resume"
-          description="Upload a PDF or DOCX and turn it into an editable resume."
-          cta="Upload resume"
-          onSelect={() => navigate('/resume/new/upload')}
-        />
-        </div>
-      </section>
     </PageShell>
   )
 }
